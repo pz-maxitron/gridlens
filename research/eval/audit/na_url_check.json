@@ -1,0 +1,512 @@
+[
+ {
+  "id": "ESM-0037",
+  "name": "Centro Nacional de Control de Energ\u00eda (CENACE",
+  "code": "200",
+  "url": "https://www.cenace.gob.mx/Docs/Transparencia/ProcLicPub/2025/CORPORATIVO/E-2025-00062073/Archivo%202.pdf"
+ },
+ {
+  "id": "ESM-0038",
+  "name": "Secretar\u00eda de Energ\u00eda (SENER)",
+  "code": "200",
+  "url": "https://transparencia.energia.gob.mx/doc/POTIC_2022/9-SuscripcionAnualLicenciaUsoSoftwareSimulacionAnalisisSistemas.pdf"
+ },
+ {
+  "id": "ESM-0039",
+  "name": "Secretar\u00eda de Energ\u00eda (SENER)",
+  "code": "200",
+  "url": "https://www.gob.mx/cms/uploads/attachment/file/325631/Renewable_Energies_Outlook_2017-2031.pdf"
+ },
+ {
+  "id": "ESM-0080",
+  "name": "Canada Energy Regulator (CER)",
+  "code": "200",
+  "url": "https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/2023/appendix-3/"
+ },
+ {
+  "id": "ORG-0001",
+  "name": "California Independent System Operator (CAISO",
+  "code": "200",
+  "url": "https://www.caiso.com/documents/caiso-irp23-stochastic-2024-0517.zip"
+ },
+ {
+  "id": "ORG-0010",
+  "name": "Cinvestav (Centro de Investigacion y de Estud",
+  "code": "200",
+  "url": "https://latamt.ieeer9.org/index.php/transactions/article/view/10343"
+ },
+ {
+  "id": "ORG-0011",
+  "name": "Universidad Nacional Autonoma de Mexico (UNAM",
+  "code": "200",
+  "url": "https://latamt.ieeer9.org/index.php/transactions/article/view/10343"
+ },
+ {
+  "id": "ORG-NAM-0001",
+  "name": "PJM Interconnection LLC",
+  "code": "426",
+  "url": "https://pjm.com/-/media/DotCom/library/reports-notices/special-reports/2022/energy-transition-in-pjm-emerging-characteristics-of-a-decarbonizing-grid-addendum.ashx"
+ },
+ {
+  "id": "ORG-NAM-0002",
+  "name": "Midcontinent Independent System Operator (MIS",
+  "code": "200",
+  "url": "https://cdn.misoenergy.org/2024%20RRA%20Report_Final676241.pdf"
+ },
+ {
+  "id": "ORG-NAM-0003",
+  "name": "New York Independent System Operator (NYISO)",
+  "code": "200",
+  "url": "https://www.nyiso.com/documents/20142/58641999/2025-2044-Appendix-A-Outlook-Production-Cost-Model-Benchmark.pdf"
+ },
+ {
+  "id": "ORG-NAM-0004",
+  "name": "ISO New England Inc. (ISO-NE)",
+  "code": "200",
+  "url": "https://iso-ne.com/static-assets/documents/100026/economic_studies_technical_guide_rev1.1.pdf"
+ },
+ {
+  "id": "ORG-NAM-0005",
+  "name": "Independent Electricity System Operator (IESO",
+  "code": "200",
+  "url": "https://www.ieso.ca/-/media/Files/IESO/Document-Library/planning-forecasts/apo/2026/2026-APO-Resource-Adequacy-and-Energy-Assessment-Methodology.pdf"
+ },
+ {
+  "id": "ORG-NAM-0006",
+  "name": "U.S. Department of Energy (DOE)",
+  "code": "200",
+  "url": "https://www.energy.gov/sites/default/files/2025-11/DOE%20Final%20EO%20Report%20%28REVISED%20OCT%2027%29.pdf"
+ },
+ {
+  "id": "ORG-NAM-0007",
+  "name": "Alberta Electric System Operator (AESO)",
+  "code": "200",
+  "url": "https://www.ethree.com/aeso-rem/"
+ },
+ {
+  "id": "ORG-NAM-0008",
+  "name": "Energy and Environmental Economics Inc. (E3)",
+  "code": "200",
+  "url": "https://www.ethree.com/wp-content/uploads/2025/01/E3_REM_Report.pdf"
+ },
+ {
+  "id": "ORG-NZERCOT-0003",
+  "name": "Electric Reliability Council of Texas (ERCOT)",
+  "code": "200",
+  "url": "https://brattle.com/wp-content/uploads/2017/10/7277_cost-benefit_analysis_of_ercots_future_ancillary_services_fas_proposal-3.pdf"
+ },
+ {
+  "id": "ORG-NZERCOT-0004",
+  "name": "The Brattle Group",
+  "code": "200",
+  "url": "https://brattle.com/wp-content/uploads/2017/10/7277_cost-benefit_analysis_of_ercots_future_ancillary_services_fas_proposal-3.pdf"
+ },
+ {
+  "id": "ORG-NZERCOT-0005",
+  "name": "Energy Exemplar Pty Ltd",
+  "code": "200",
+  "url": "https://chenchen.page/assets/files/Chen_2026_Environ._Res.__Energy_3_035005.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0001",
+  "name": "National Renewable Energy Laboratory (NREL)",
+  "code": "000",
+  "url": "https://www.osti.gov/biblio/1870676"
+ },
+ {
+  "id": "ORG-NAMD-0002",
+  "name": "Pacific Northwest National Laboratory (PNNL)",
+  "code": "000",
+  "url": "https://osti.gov/biblio/1901925"
+ },
+ {
+  "id": "ORG-NAMD-0003",
+  "name": "Lawrence Berkeley National Laboratory (LBNL /",
+  "code": "200",
+  "url": "https://eta-publications.lbl.gov/sites/default/files/ppt.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0004",
+  "name": "PacifiCorp",
+  "code": "200",
+  "url": "https://www.pacificorp.com/content/dam/pcorp/documents/en/pacificorp/energy/integrated-resource-plan/2025-irp/PacifiCorp_2025_IRP_PIM_March_14_2024.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0005",
+  "name": "Xcel Energy (Northern States Power Co. / Sout",
+  "code": "200",
+  "url": "https://mn.gov/cah/assets/21-2500-40336-itm-xcel-energys-petition-for-approval-2023-annual-fuel-forecast-and-monthly-fuel-cost-charges_tcm19-731253.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0006",
+  "name": "Colorado Springs Utilities",
+  "code": "200",
+  "url": "https://www.csu.org/hubfs/Document-Library/EIRP.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0007",
+  "name": "University of Victoria (West Coast Wave Initi",
+  "code": "200",
+  "url": "https://www.uvic.ca/research/projects/wcwi/home/news/archive/current/news-story-22.php"
+ },
+ {
+  "id": "ORG-NAMD-0008",
+  "name": "Montana-Dakota Utilities Co. (MDU)",
+  "code": "200",
+  "url": "https://puc.sd.gov/commission/dockets/electric/2016/el16-026/dr1-1.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0009",
+  "name": "California Public Utilities Commission (CPUC)",
+  "code": "000",
+  "url": "https://www.osti.gov/servlets/purl/1030201"
+ },
+ {
+  "id": "ORG-NAMD-0010",
+  "name": "Newfoundland and Labrador Hydro (NLH / Nalcor",
+  "code": "200",
+  "url": "http://www.pub.nl.ca/applications/NLH2018ReliabilityAdequacy/reports/The%20Liberty%20Consulting%20Group%20Reliability%20and%20Resource%20Adequacy%20Study%20Report%20-%202019-08-19.PDF"
+ },
+ {
+  "id": "ORG-NAMD-0011",
+  "name": "Nova Scotia Power Inc. (NSPI)",
+  "code": "200",
+  "url": "https://www.nspower.ca/docs/default-source/irp/appendix-e-irp-modeling-results.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0012",
+  "name": "Synapse Energy Economics, Inc.",
+  "code": "200",
+  "url": "https://www.nspower.ca/docs/default-source/irp/synapse-final-report-generation-optimization-and-utilization-may-1-2018.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0013",
+  "name": "Manitoba Hydro",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/hubfs/Resources/Case%20Studies/EE-Case-Studies_WEB_02.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0014",
+  "name": "Louisville Gas and Electric Company and Kentu",
+  "code": "200",
+  "url": "https://psc.ky.gov/pscecf/2025-00045/rick.lovekamp%40lge-ku.com/06062025040225/07-PSC_DR3_LGE_KU_Attach_to_Q8_%28b%29_-_Att_1_Further_Analysis_of_MC2_Retirement.pdf"
+ },
+ {
+  "id": "ORG-NAMD-0015",
+  "name": "SaskPower (Saskatchewan Power Corporation)",
+  "code": "200",
+  "url": "https://linkedin.com/in/andrew-munro-p-eng-mba-6b598a3;https://linkedin.com/in/tej-shrestha"
+ },
+ {
+  "id": "ORG-NAMD-0016",
+  "name": "Puget Sound Energy (PSE)",
+  "code": "200",
+  "url": "https://eta-publications.lbl.gov/sites/default/files/iurc_storage_irp_2021_05_25_v2.pdf"
+ },
+ {
+  "id": "ORG-VMINE-0004",
+  "name": "Eversource Energy",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/how-eversource-used-plexos-to-put-a-price-tag-on-good-grid-planning"
+ },
+ {
+  "id": "ORG-VMINE-0007",
+  "name": "The Energy Authority (TEA)",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/plexos-energy-authority-portoflio-strategy"
+ },
+ {
+  "id": "ORG-VMINE-0008",
+  "name": "ISO New England (ISO-NE)",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/advancing-energy-transition-planning-at-iso-new-england-with-plexos"
+ },
+ {
+  "id": "ORG-VMINE-0009",
+  "name": "Midcontinent Independent System Operator (MIS",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/how-miso-utilizes-plexos-for-enhanced-resource-adequacy"
+ },
+ {
+  "id": "ORG-VMINE-0012",
+  "name": "Jacobs Engineering Group",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/customers-jacobs"
+ },
+ {
+  "id": "ORG-VMINE-0013",
+  "name": "Go2 Power",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/customers/go2-power"
+ },
+ {
+  "id": "ORG-VMINE-0014",
+  "name": "Energy and Environmental Economics (E3)",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/customers-e3-energy-environmental-economics"
+ },
+ {
+  "id": "ORG-VMINE-0016",
+  "name": "CenterPoint Energy",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/customers/centerpoint"
+ },
+ {
+  "id": "ORG-VMINE-0017",
+  "name": "Salt River Project (SRP)",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/customers-salt-river-project-srp"
+ },
+ {
+  "id": "ORG-VMINE-0028",
+  "name": "Cascade Natural Gas (subsidiary of MDU Resour",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/cascade-natural-gas-utilizes-plexos-for-decarbonization-compliance"
+ },
+ {
+  "id": "ORG-VMINE-0033",
+  "name": "Arizona State University",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0041",
+  "name": "Oregon State University",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0046",
+  "name": "Rensselaer Polytechnic Institute",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0048",
+  "name": "Stanford University",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0055",
+  "name": "University of California-Berkeley",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0056",
+  "name": "University of California Irvine",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0058",
+  "name": "University of Delaware",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0062",
+  "name": "University of Minnesota",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0065",
+  "name": "University of Southern California",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0068",
+  "name": "University of Texas at Austin",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0070",
+  "name": "University of Utah",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-VMINE-0071",
+  "name": "University of Victoria (Canada)",
+  "code": "404",
+  "url": "https://energyexemplar.com/our-company/clients"
+ },
+ {
+  "id": "ORG-FIN-0002",
+  "name": "Black & Veatch (Management Consulting LLC)",
+  "code": "404",
+  "url": "https://bv.com/people/dr-hua-fang"
+ },
+ {
+  "id": "ORG-VMINE2-0002",
+  "name": "Levitan & Associates, Inc.",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/aurora-forecasting-connecticut"
+ },
+ {
+  "id": "ORG-VMINE2-0003",
+  "name": "Connecticut Department of Energy and Environm",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/aurora-forecasting-connecticut"
+ },
+ {
+  "id": "ORG-USIRP-0001",
+  "name": "Dominion Energy (Virginia Electric and Power ",
+  "code": "200",
+  "url": "https://www.dominionenergy.com/-/media/content/about/our-company/irp/pdfs/2026-integrated-resource-plan-update.pdf;https://www.dominionenergy.com/-/media/content/about/our-company/irp/pdfs/2024-irp-w_o-appendices.pdf;https://dms.psc.sc.gov/Attachments/Matter/ae6fed36-59bd-4df5-8c5e-c881abe55ab2"
+ },
+ {
+  "id": "ORG-USIRP-0002",
+  "name": "NV Energy (Nevada Power Company d/b/a NV Ener",
+  "code": "404",
+  "url": "https://www.nvenergy.com/publish/content/dam/nvenergy/brochures_arch/about-nvenergy/rates-regulatory/recent-regulatory-filings/irp/IRP-Volume-27.pdf;https://www.nvenergy.com/publish/content/dam/nvenergy/brochures_arch/about-nvenergy/rates-regulatory/recent-regulatory-filings/2026-irp/NPC-SPPC-Volume-5.pdf;https://puc-onbase.nv.gov/api/Document/AYhWYa8j8A4elQe1QU45IqhvYl9aFYrDXgsmT0xx0uVNZVPVqEcpMXaBDB%C3%81r7L3Y742yALDX%C3%81QY78y3iboCcgAU%3D/?OverlayMode=View"
+ },
+ {
+  "id": "ORG-USIRP-0003",
+  "name": "Avista Corporation",
+  "code": "000",
+  "url": "https://myavista.com/-/media/myavista/content-documents/about-us/our-company/irp-documents/2025/avista-2025-irp-work-plan.pdf;https://myavista.com/-/media/myavista/content-documents/about-us/our-company/irp-documents/2025/appendix/appendix-a--tac-presentations.pdf"
+ },
+ {
+  "id": "ORG-USIRP-0004",
+  "name": "Arizona Public Service (APS)",
+  "code": "000",
+  "url": "https://www.aps.com/-/media/APS/APSCOM-PDFs/About/Our-Company/Doing-business-with-us/Resource-Planning-and-Management/July_26_RPAC_Meeting_Presentation.pdf"
+ },
+ {
+  "id": "ORG-USIRP-0005",
+  "name": "American Electric Power (AEP)",
+  "code": "200",
+  "url": "https://www.energyexemplar.com/blog/from-three-weeks-to-three-days-aep-speeds-irp-updates-with-plexos-intelligence"
+ },
+ {
+  "id": "ORG-USIRP-0006",
+  "name": "El Paso Electric Company",
+  "code": "403",
+  "url": "https://interchange.puc.texas.gov/Documents/57501_186_1590678.PDF;https://interchange.puc.texas.gov/Documents/57501_89_1506307.PDF"
+ },
+ {
+  "id": "ORG-CADEEP-0001",
+  "name": "Hydro-Qu\u00e9bec",
+  "code": "200",
+  "url": "https://emi-ime.ca/inventory-model/plexos/;https://emi-ime.ca/inventory-people/gregory-emiel/"
+ },
+ {
+  "id": "ORG-CONSMIN3-0007",
+  "name": "Synapse Energy Economics Inc.",
+  "code": "404",
+  "url": "https://synapse-energy.com/sites/default/files/PUR-2024-00184%20-%20Glick%20Direct%2024-063.pdf;https://synapse-energy.com/sites/default/files/PUR_2020_00035_Wilson_Direct_%28Public%29_20-046.pdf"
+ },
+ {
+  "id": "ORG-CONSMIN3-0008",
+  "name": "Synapse Energy Economics Inc.",
+  "code": "200",
+  "url": "https://synapse-energy.com/long-term-procurement-plan-rulemaking-california"
+ },
+ {
+  "id": "ORG-USIRP-0007",
+  "name": "WEC Energy Group (We Energies / Wisconsin Pub",
+  "code": "200",
+  "url": "https://linkedin.com/in/jaimecano2;https://linkedin.com/in/charley-rees;https://linkedin.com/in/sara-bethke-43962221"
+ },
+ {
+  "id": "ORG-USIRP-0008",
+  "name": "Tri-State Generation and Transmission Associa",
+  "code": "200",
+  "url": "https://www.dora.state.co.us/pls/efi/efi_p2_v2_demo.show_document?p_dms_document_id=969082"
+ },
+ {
+  "id": "ORG-B44-0005",
+  "name": "Guidehouse",
+  "code": "200",
+  "url": "https://ethree.com/people/laura-shi"
+ },
+ {
+  "id": "ORG-USPUB-0001",
+  "name": "Tennessee Valley Authority (TVA)",
+  "code": "200",
+  "url": "https://tva-azr-eastus-cdn-ep-tvawcm-prd.azureedge.net/cdn-tvawcma/docs/default-source/environment/environmental-stewardship/integrated-resource-plan/2024/utility-of-the-future-information-exchange-report.pdf?sfvrsn=d8901489_1"
+ },
+ {
+  "id": "ORG-USPUB-0002",
+  "name": "Omaha Public Power District (OPPD)",
+  "code": "000",
+  "url": "https://www.oppd.com/media/321638/2026-6-jun-integrated-system-plan-update.pdf"
+ },
+ {
+  "id": "ORG-USPUB-0003",
+  "name": "Bonneville Power Administration (BPA)",
+  "code": "200",
+  "url": "https://www.bpa.gov/-/media/Aep/projects/energy-imbalance-market/20190612-june-12-2019-eim-stakeholder-mtg.pdf"
+ },
+ {
+  "id": "ORG-USPUB-0004",
+  "name": "Los Angeles Department of Water and Power (LA",
+  "code": "200",
+  "url": "https://ladwp.com/cs/idcplg?IdcService=GET_FILE&RevisionSelectionMethod=LatestReleased&dDocName=OPLADWPCCB741835"
+ },
+ {
+  "id": "ORG-THINK-0001",
+  "name": "Rocky Mountain Institute (RMI)",
+  "code": "200",
+  "url": "https://rmi.org/app/uploads/dlm_uploads/2025/04/Reimagining_the_Electricity_Sector_in_Island_Nations.pdf"
+ },
+ {
+  "id": "ORG-INSENG-0001",
+  "name": "Burns & McDonnell (via 1898 & Co. division)",
+  "code": "000",
+  "url": "https://www.aps.com/-/media/APS/APSCOM-PDFs/About/Our-Company/Doing-business-with-us/Resource-Planning-and-Management/APS_2026_IRP_Public_Stakeholder_Meeting.pdf?sc_lang=en"
+ },
+ {
+  "id": "tech_dc_001",
+  "name": "Constellation Energy Generation LLC",
+  "code": "404",
+  "url": "https://jobs.constellationenergy.com/generation-careers/jobs/137114?lang=en-us"
+ },
+ {
+  "id": "ORG-DOELABS-0001",
+  "name": "Sandia National Laboratories",
+  "code": "000",
+  "url": "https://www.osti.gov/servlets/purl/1513929"
+ },
+ {
+  "id": "ORG-DOELABS-0002",
+  "name": "Oak Ridge National Laboratory (ORNL)",
+  "code": "200",
+  "url": "http://energy.gov/sites/prod/files/2019/12/f70/1%20Suman%20Debnath%2C%20ORNL.pdf"
+ },
+ {
+  "id": "ORG-DOELABS-0003",
+  "name": "Argonne National Laboratory",
+  "code": "403",
+  "url": "https://publications.anl.gov/anlpubs/2024/06/189417.pdf"
+ },
+ {
+  "id": "ORG-DOELABS-0004",
+  "name": "Idaho National Laboratory (INL)",
+  "code": "200",
+  "url": "https://inldigitallibrary.inl.gov/content/uploads/50/2026/04/Sort_65751.pdf"
+ },
+ {
+  "id": "ORG-ISLMG-0001",
+  "name": "Hawaiian Electric Company (Hawaiian Electric ",
+  "code": "200",
+  "url": "https://www.hawaiianelectric.com/documents/clean_energy_hawaii/integrated_grid_planning/stakeholder_engagement/working_groups/forecast_assumptions/20200925_draft_IGP_inputs_and_assumptions.pdf"
+ },
+ {
+  "id": "ORG-ACEASEAN-0002",
+  "name": "GE Energy Consulting and Consortium",
+  "code": "404",
+  "url": "https://storage.googleapis.com/aceweb-bucket-261225/files/publication/1766846416_01_AIMS-III-Phase-1-and-2_Summary-Report-_Endorsed-AMEM39.pdf;https://aseanenergy.org/the-2nd-technical-review-group-meeting-on-asean-interconnection-masterplan-study-aims-iii-development-2"
+ },
+ {
+  "id": "ORG-ADS85-0002",
+  "name": "Inter-American Development Bank (IDB)",
+  "code": "200",
+  "url": "https://rinnovabili.it/wp-content/uploads/2025/11/IRENA_OUT_RETO_South_America_2025_Summary.pdf"
+ }
+]
