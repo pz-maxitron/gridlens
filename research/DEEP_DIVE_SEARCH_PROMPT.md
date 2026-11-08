@@ -117,7 +117,8 @@ states for {TOOL} and written whatever you found (including nothing, via
 ## Evidence standards (non-negotiable, same as always)
 
 1. First-person evidence beats third-party mentions.
-2. A direct quote beats a paraphrase.
+2. A direct quote beats a paraphrase -- prefix `exact_snippet_or_quote`
+   with `[paraphrase]` if it isn't word-for-word from the source.
 3. `status=confirmed` only if solid; `candidate` for a lead needing a
    second look.
 4. **No fabrication, ever.** Never invent a URL or quote.

@@ -112,7 +112,13 @@ organizations into one call.)
 ## Evidence standards (non-negotiable)
 
 1. First-person evidence beats third-party mentions.
-2. A direct quote beats a paraphrase.
+2. A direct quote beats a paraphrase -- and mark which one it is: if
+   `exact_snippet_or_quote` is not word-for-word from the source, prefix
+   it with `[paraphrase]` rather than presenting it as verbatim. An
+   independent verification pass found this distinction matters in
+   practice -- a paraphrased quote presented as exact reads as
+   unverifiable/suspicious to a reviewer even when the underlying claim
+   is genuinely true.
 3. `status=confirmed` only if solid; `candidate` for a lead needing a
    second look; `gap_confirmed` for a genuine negative.
 4. **No fabrication, ever.** Never invent a URL or quote.
