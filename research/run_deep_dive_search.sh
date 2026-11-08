@@ -20,7 +20,7 @@ DONE_MARKER="research/.deep_dive_done"
 touch "$DONE_MARKER"
 
 TEMPLATE=$(cat research/DEEP_DIVE_SEARCH_PROMPT.md)
-TOOLS=("PLEXOS" "PyPSA" "PROMOD" "Bid3" "SDDP")
+source research/tool_hints.sh
 
 mapfile -t CANDIDATES < <(
   python3 - "$BATCH_ID" <<'PYEOF'
@@ -69,6 +69,7 @@ for COUNTRY in "${CANDIDATES[@]}"; do
     PROMPT="${PROMPT//\{BATCH_ID\}/$BATCH_ID}"
     PROMPT="${PROMPT//\{EXISTING_COUNT\}/$COUNT}"
     PROMPT="${PROMPT//\{TOOL\}/$TOOL}"
+    PROMPT="${PROMPT//\{TOOL_HINT\}/${TOOL_HINT[$TOOL]}}"
 
     hermes -p implementer chat -q "$PROMPT" > "$LOG" 2>&1
     RC=$?

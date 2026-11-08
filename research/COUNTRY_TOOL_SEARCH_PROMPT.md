@@ -24,6 +24,8 @@ other directory, and do not investigate stray files elsewhere.
 Search for organizations in **{COUNTRY}** using **{TOOL}**
 {TOOL_NOTE}
 
+**Known high-leverage source for this tool:** {TOOL_HINT}
+
 1. Check what's already recorded (avoid duplicating it):
    ```
    python3 scripts/research_helpers.py {BATCH_ID} existing "{COUNTRY}"

@@ -28,14 +28,7 @@ cd ~/code/plexos-catalogue-web || exit 1
 mkdir -p research/logs/tools
 
 TEMPLATE=$(cat research/COUNTRY_TOOL_SEARCH_PROMPT.md)
-
-TOOLS=("PLEXOS" "PyPSA" "PROMOD" "Bid3" "SDDP")
-declare -A TOOL_NOTE
-TOOL_NOTE["PLEXOS"]="(Energy Exemplar)."
-TOOL_NOTE["PyPSA"]="(the open-source tool)."
-TOOL_NOTE["PROMOD"]="(PROMOD IV, Hitachi Energy / formerly ABB)."
-TOOL_NOTE["Bid3"]="(Aurora Energy Research)."
-TOOL_NOTE["SDDP"]="(PSR Energy Consulting's Stochastic Dual Dynamic Programming tool -- ALSO search \"PSR SDDP\" and \"PSE SDDP\" as variant spellings, since the exact vendor-name spelling is unconfirmed; treat all 3 as the same tool)."
+source research/tool_hints.sh
 
 mapfile -t COUNTRIES < <(
   python3 - "$BATCH_ID" <<'PYEOF'
@@ -84,6 +77,7 @@ PYEOF
     PROMPT="${PROMPT//\{BATCH_ID\}/$BATCH_ID}"
     PROMPT="${PROMPT//\{TOOL\}/$TOOL}"
     PROMPT="${PROMPT//\{TOOL_NOTE\}/${TOOL_NOTE[$TOOL]}}"
+    PROMPT="${PROMPT//\{TOOL_HINT\}/${TOOL_HINT[$TOOL]}}"
 
     hermes -p implementer chat -q "$PROMPT" > "$LOG" 2>&1
     RC=$?

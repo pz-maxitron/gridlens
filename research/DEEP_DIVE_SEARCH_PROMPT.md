@@ -38,6 +38,8 @@ every state — a handful of the largest/most complex ones is enough for
 one session; this is about depth on the most promising places, not
 exhaustive coverage.
 
+**Known high-leverage source for this tool:** {TOOL_HINT}
+
 **Before adding anything, check what's already recorded:**
 ```
 python3 scripts/research_helpers.py {BATCH_ID} existing "{COUNTRY}"

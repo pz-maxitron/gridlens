@@ -73,6 +73,67 @@ build history:
    country's PLEXOS model often credit the commissioning agency or the
    consultancy that built it in the acknowledgements, even when neither has
    a public-facing announcement.
+7. **Vendor's own case-study/press pages, browsed directly, not just
+   searched generically.** Searching "Bid3 Aurora Energy Research
+   <country>" tends to surface weak/generic case studies elsewhere, but
+   the vendor's own `/resources` or `/media` section (e.g.
+   `auroraer.com/resources/aurora-insights`) carries dated, first-party,
+   specific press releases naming real transactions and markets — found a
+   confirmed-quality lead (a named US financing deal, three named states)
+   this way that generic search missed entirely.
+8. **Government-funded national-lab report repositories.** In the US,
+   `site:osti.gov <tool name>` surfaces DOE-funded collaborative studies
+   that explicitly name the modeling tool used, often for a named regional
+   consortium (e.g. a SERC-region study using PROMOD). Most countries have
+   an analogous public repository (a national energy research institute,
+   a government open-data portal) — worth searching directly by name
+   rather than only generic web search.
+9. **Regional planning body's own "modeling suite" presentations.**
+   Regional transmission/grid planning councils (e.g. the US Northwest
+   Power and Conservation Council) publish their own slide decks naming
+   every tool in their modeling suite by name and vendor — a single PDF
+   can confirm a tool's usage with a direct first-party quote. Search
+   `"<regional council name>" modeling suite OR "production cost"
+   <tool name>`.
+10. **The vendor's OWN marketing material listing deployment countries.**
+    Some vendors (notably PSR, maker of SDDP) publish their own slide
+    decks/brochures that list every country or region where their tool is
+    deployed, in one place — see "SDDP: known deployment countries" below.
+    This is a high-leverage shortcut: check for this kind of document for
+    each of the 5 tools before assuming a country-by-country sweep is the
+    only way to find leads.
+
+## Tool-specific high-leverage sources (found during the US multi-tool wave)
+
+- **SDDP (PSR)**: PSR's own marketing material ("Stochastic Programming
+  Models for Energy Planning", psr-inc.com) explicitly lists deployment
+  countries: **Americas** — all of South and Central America, United
+  States, Canada, Dominican Republic. **Europe** — Austria, Spain, France,
+  Scandinavia, Belgium, Turkey, the Balkans. **Asia** — provinces in China
+  (Shanghai, Sichuan, Guangdong, Shandong), India, Philippines, Singapore,
+  Malaysia, Kyrgyzstan, Sri Lanka, Tajikistan, Vietnam. **Oceania** — New
+  Zealand. **Africa** — Morocco, Tanzania, Namibia, Egypt, Angola, Sudan,
+  Ethiopia, Ghana. Treat this as a strong prior, not a substitute for
+  verification: it confirms SDDP usage SOMEWHERE in that country, but the
+  specific organization still needs to be found and cited per the normal
+  evidence standards (search `"<country>" SDDP OR OptGen PSR` as the first
+  technique for any of these countries).
+- **PyPSA**: beyond the project's own academic maintainers, check for
+  regulatory bodies quietly adopting it for official scenario work (e.g. a
+  GitHub changelog config file named after a real agency's demand
+  scenario is a real signal, not noise) and cross-industry "landscape
+  assessment" PDFs (GridLab/RMI-style reports comparing open-source vs.
+  commercial tools) which often name several real adopters in one
+  document across multiple tools at once, not just PyPSA.
+- **Bid3 (Aurora Energy Research)**: Aurora itself has country-specific
+  legal entities (e.g. "Aurora Energy Research LLC (USA)") that do direct
+  market-analytics work locally — their own press releases name specific
+  deals/projects/states, which is stronger evidence than a generic vendor
+  case-study mention of a third-party client.
+- **PROMOD (Hitachi Energy)**: regional transmission organizations'
+  "Market Efficiency" analysis documents (PJM-style) are a reliable
+  first-party source, and DOE OSTI reports often name a named regional
+  consortium using it for a specific study.
 
 ## Role taxonomy discipline
 
