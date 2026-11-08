@@ -56,6 +56,13 @@ state-specific study. When in doubt, skip rather than risk a duplicate.
 
 ## Write as soon as you have a result — do not keep researching after
 
+**A verbatim quote shown in a search engine's own result snippet is
+sufficient evidence by itself** — do not download the original document
+to re-verify it; that has, in practice, eaten entire sessions without
+ever reaching a write. **Hard budget: after 10 tool calls total in this
+session, whatever you've found gets written NOW**, even incomplete —
+a `candidate` row beats zero output.
+
 ```
 python3 scripts/research_helpers.py {BATCH_ID} add /tmp/row.json
 python3 scripts/research_helpers.py {BATCH_ID} gap "{COUNTRY}" {TOOL} "<query-url>" "<notes>"

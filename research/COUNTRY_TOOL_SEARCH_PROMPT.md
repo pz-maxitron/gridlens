@@ -33,9 +33,25 @@ Search for organizations in **{COUNTRY}** using **{TOOL}**
    1; pick ONE more (development-bank procurement notices, LinkedIn,
    vendor case studies, non-English search, academic acknowledgements)
    based on what seems most promising for this country.
-3. **The moment you have a result -- whether a real finding or a
+3. **A verbatim quote shown in a search engine's own result snippet is
+   sufficient evidence by itself.** Do NOT download the original PDF/
+   webpage/filing to re-verify a quote you already have from a search
+   snippet -- that is unnecessary extra work that has, in practice,
+   eaten an entire session without ever reaching a write. If the snippet
+   shows a specific, on-topic quote and you can cite the URL it came
+   from, that is enough for `status=confirmed` (if the quote is clearly
+   first-party) or `status=candidate` (if you're not fully sure) --
+   either way, WRITE IT, you do not need to fetch the underlying document.
+4. **Hard budget: after 10 tool calls in this session (searches,
+   extracts, terminal commands combined), whatever you have found so
+   far gets written NOW, even if you'd have liked one more check.** A
+   `candidate` row with caveats in `notes` is far more useful than zero
+   output because you kept double-checking. Count your tool calls as you
+   go; don't let this limit sneak past you.
+5. **The moment you have a result -- whether a real finding or a
    genuine negative -- write it. This is not optional and not something
-   to batch up.** You only need ONE of these two outcomes:
+   to batch up, and not something to "confirm once more" first.** You
+   only need ONE of these two outcomes:
    ```
    # Found one or more real organizations -- write EACH one as soon as you have it:
    python3 scripts/research_helpers.py {BATCH_ID} add /tmp/row.json
@@ -43,7 +59,7 @@ Search for organizations in **{COUNTRY}** using **{TOOL}**
    # Found nothing after trying both techniques -- write ONE gap row:
    python3 scripts/research_helpers.py {BATCH_ID} gap "{COUNTRY}" {TOOL} "<query-url>" "<notes on what you tried>"
    ```
-4. Stop. Do not keep searching for more after you've written at least
+6. Stop. Do not keep searching for more after you've written at least
    one result (finding or gap) -- a second pass on this country+tool can
    happen in a later wave if needed.
 
