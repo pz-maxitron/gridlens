@@ -5,7 +5,7 @@ found **{EXISTING_COUNT} confirmed/candidate entries** for **{COUNTRY}**
 (batch {BATCH_ID}) — that's a strong signal this is a large, complex
 power market where a single broad "country-wide" search per tool likely
 missed real organizations. This session's job is to find what the
-broad pass missed, using a more targeted search strategy.
+broad pass missed, using a more targeted, state/province-level search.
 
 ## Your working directory (CRITICAL — read this first)
 
@@ -16,51 +16,50 @@ broad pass missed, using a more targeted search strategy.
 `cd` there as your very first action. Do not explore `/home/gmk` or any
 other directory, and do not investigate stray files elsewhere.
 
-## Step 1 — identify the real grid/market structure (don't skip this)
+## Step 1 — enumerate {COUNTRY}'s first-level administrative divisions
 
-Before searching more, spend one search finding out how **{COUNTRY}**'s
-power system is actually organized operationally. Most large countries
-are NOT run as one single national entity — they have regional grid
-operators, ISOs/RTOs, or TSOs with their own planning processes, and
-those are what actually commission/use these modelling tools. Examples
-of the kind of structure to look for (don't assume these specific names
-apply to {COUNTRY} — research what's real for THIS country):
+Search for {COUNTRY}'s states/provinces (ISO 3166-2 level, e.g. the 50
+US states, Germany's 16 Bundesländer, Brazil's 26 states). Use
+administrative boundaries, not grid-operator footprints — grid operator
+boundaries don't work well here: some countries have just one national
+grid operator (zero extra granularity from that angle), and there are
+generally many separate utilities per operator zone anyway.
+State/province boundaries are well-defined, consistently enumerable,
+and line up with how state-level regulators, municipal utilities, and
+state-funded planning studies are actually organized.
 
-- US: regional ISOs/RTOs (PJM, MISO, SPP, ERCOT, CAISO, NYISO, ISO-NE)
-  plus non-ISO utility regions (Southeast, parts of the West)
-- Germany: the 4 TSOs (50Hertz, Amprion, TenneT Germany, TransnetBW)
-- A country without clean regional operators might just have one
-  national utility/TSO plus several large distribution companies or
-  regional energy regulators — that's fine, use whatever the REAL
-  structure is.
+## Step 2 — search per state/province, per tool
 
-## Step 2 — search per identified region/operator, per tool
+For each state/province, search for organizations using each of the 5
+tools: **PLEXOS, PyPSA, PROMOD, Bid3, SDDP** (also try "PSR SDDP" /
+"PSE SDDP" spelling variants). This surfaces state-level regulator
+filings (e.g. a state Public Utility Commission's integrated resource
+plan), municipal utilities, rural cooperatives, and state-funded
+academic studies that a single broad country-wide search misses.
 
-For each real regional operator or structure you identified, search for
-organizations in that specific region/operator's footprint using each
-of the 5 tools: **PLEXOS, PyPSA, PROMOD, Bid3, SDDP** (also try "PSR
-SDDP" / "PSE SDDP" spelling variants). This surfaces region-specific
-planning studies, state/provincial regulator filings, and local
-utility/cooperative usage that a single broad country-wide search misses.
+You don't need equal depth on every state — spend more effort on states
+with large/complex grids (e.g. a big industrial state) and move quickly
+through small ones.
 
 **Before adding anything, check what's already recorded:**
 ```
 python3 scripts/research_helpers.py {BATCH_ID} existing "{COUNTRY}"
 ```
 
-## CRITICAL — avoid duplicating nationally-scoped entities
+## CRITICAL — avoid duplicating multi-state entities
 
 The data schema only has a `country_label` field — there is no
-sub-region field. This means:
+state/province field. This means:
 
-- If you find a nationally- or multi-region-scoped organization (e.g. an
-  RTO itself, like MISO or PJM) that's **already in the existing list**,
-  do NOT add it again just because you found it while searching a
-  specific region — it's the same organization, already recorded.
+- If you find an organization that operates across multiple states
+  (e.g. a multi-state RTO/ISO, a national regulator, a multi-state
+  utility holding company) that's **already in the existing list**, do
+  NOT add it again just because you found it while searching a specific
+  state — it's the same organization, already recorded.
 - Only add an organization if it's **genuinely not yet in the existing
-  list** — e.g. a state-level Public Utility Commission, a municipal
-  utility, a regional cooperative, or a study specific to one operator's
-  footprint that wasn't captured by the broad national search.
+  list** — e.g. a state Public Utility Commission, a municipal utility,
+  a rural electric cooperative, or a state-specific study that wasn't
+  captured by the broad national search.
 - When in doubt whether something you found is the same as an existing
   entry under a slightly different name, treat it as the SAME
   organization and skip it rather than risk a duplicate row.
@@ -88,7 +87,7 @@ session only adds additional rows on top.
 
 ## What "done" looks like
 
-You've identified the real regional/operator structure for {COUNTRY},
-searched each region/operator × each of the 5 tools for genuinely new
-(not-yet-recorded) organizations, and added anything real you found.
-Then stop — say plainly what you found and didn't find.
+You've enumerated {COUNTRY}'s states/provinces, searched each
+state/province × each of the 5 tools for genuinely new (not-yet-recorded)
+organizations, and added anything real you found. Then stop — say
+plainly what you found and didn't find.
