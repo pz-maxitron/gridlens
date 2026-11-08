@@ -77,6 +77,36 @@ python3 scripts/research_helpers.py {BATCH_ID} add /tmp/row.json
 python3 scripts/research_helpers.py {BATCH_ID} gap "{COUNTRY}" {TOOL} "<query-url>" "<notes>"
 ```
 
+**Record schema for `add` (write this exact shape to `/tmp/row.json`):**
+```json
+{{
+  "batch_id": "{BATCH_ID}",
+  "institution_name": "Full organization name",
+  "institution_category": "one of: utility_iso_rto, utility_tso, utility_generation, utility_distribution, consultancy, vendor, academic_research, think_tank, industry_association, government_agency, government_regulator, international_body, development_bank, ngo_foundation, energy_company_diversified, project_developer, other",
+  "official_website": "https://... (or empty string if unknown)",
+  "country_label": "{COUNTRY}",
+  "tool_name": "{TOOL}",
+  "tool_category": "one of: production_cost_uc, capacity_expansion, planning_expansion, market_simulation, energy_system_optimization, forecasting, distribution_planning, other",
+  "tool_explicitly_named": true,
+  "role": "one of: direct_user, commissioner, consultant_modeler, research_user, subject_of_study, qa_reviewer",
+  "use_case": "A SPECIFIC sentence describing what the tool is actually used for, drawn from the real evidence -- not a generic placeholder.",
+  "decision_type": "",
+  "decision_basis": "",
+  "evidence_strength": "HIGH | MEDIUM | LOW",
+  "source_type": "e.g. research_finding, news_release, academic_paper, procurement_notice, official_methodology, tender_procurement",
+  "source_title": "Title of the source document (or empty string)",
+  "source_date": "Date of the source, free text (or empty string)",
+  "source_url": "A real, working URL -- REQUIRED, never fabricate or guess one",
+  "exact_snippet_or_quote": "A direct quote from the source supporting the claim -- strongly preferred",
+  "why_it_supports_the_claim": "One sentence connecting the quote/source to the claim",
+  "status": "confirmed | candidate | rejected | gap_confirmed",
+  "historical_or_current": "current | historical",
+  "notes": "Caveats, reasoning, anything a reviewer should know"
+}}
+```
+(`id` is filled in by the helper; `batch_id` is NOT -- it's required in
+the JSON exactly as shown above, or the write is rejected.)
+
 Write EACH finding the moment you have it — don't hold multiple findings
 in your head to write at the end. This session does NOT call `mark` —
 the checklist row for {COUNTRY} is already marked done from the national

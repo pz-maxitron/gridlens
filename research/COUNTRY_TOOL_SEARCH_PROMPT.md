@@ -77,6 +77,7 @@ Search for organizations in **{COUNTRY}** using **{TOOL}**
 
 ```json
 {{
+  "batch_id": "{BATCH_ID}",
   "institution_name": "Full organization name",
   "institution_category": "one of: utility_iso_rto, utility_tso, utility_generation, utility_distribution, consultancy, vendor, academic_research, think_tank, industry_association, government_agency, government_regulator, international_body, development_bank, ngo_foundation, energy_company_diversified, project_developer, other",
   "official_website": "https://... (or empty string if unknown)",
@@ -101,10 +102,12 @@ Search for organizations in **{COUNTRY}** using **{TOOL}**
 }}
 ```
 
-(Leave `decision_type`/`decision_basis` empty. `id` and `batch_id` are
-filled in by the helper. Write each real finding to a temp JSON file,
-e.g. `/tmp/row.json`, one at a time, then call `add` -- don't try to
-write multiple organizations into one call.)
+(Leave `decision_type`/`decision_basis` empty. `id` is filled in by the
+helper -- but **`"batch_id": "{BATCH_ID}"` is REQUIRED in the JSON you
+write**, the helper does NOT fill it in and will reject the row without
+it. Write each real finding to a temp JSON file, e.g. `/tmp/row.json`,
+one at a time, then call `add` -- don't try to write multiple
+organizations into one call.)
 
 ## Evidence standards (non-negotiable)
 
