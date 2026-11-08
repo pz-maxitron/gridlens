@@ -45,7 +45,7 @@ import plugins.web.keyless_mcp as web  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 LLM_URL = "http://127.0.0.1:39789/v1/chat/completions"
-LLM_MODEL = "Qwen3.8-27B-UD-Q4_K_M"
+LLM_MODEL = "Qwen3.6-35B-A3B-UD-Q4_K_M"
 
 
 def _gateway_key():
