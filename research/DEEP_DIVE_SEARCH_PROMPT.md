@@ -38,7 +38,14 @@ every state — a handful of the largest/most complex ones is enough for
 one session; this is about depth on the most promising places, not
 exhaustive coverage.
 
+**What this tool is for (read first):** {TOOL_CONTEXT}
+
 **Known high-leverage source for this tool:** {TOOL_HINT}
+
+At the state level, entity-first is even more effective than at the
+country level: search the SPECIFIC state regulator/municipal
+utility/rural co-op's own documents for {TOOL} by name, rather than a
+generic `{TOOL} <state>` query.
 
 **Before adding anything, check what's already recorded:**
 ```

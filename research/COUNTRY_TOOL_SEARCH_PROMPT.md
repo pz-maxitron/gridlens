@@ -24,17 +24,25 @@ other directory, and do not investigate stray files elsewhere.
 Search for organizations in **{COUNTRY}** using **{TOOL}**
 {TOOL_NOTE}
 
+**What this tool is for (read first):** {TOOL_CONTEXT}
+
 **Known high-leverage source for this tool:** {TOOL_HINT}
 
 1. Check what's already recorded (avoid duplicating it):
    ```
    python3 scripts/research_helpers.py {BATCH_ID} existing "{COUNTRY}"
    ```
-2. Try **at most 2 search techniques**: first-person documents (the
-   org's own planning docs, tenders, press releases) is always technique
-   1; pick ONE more (development-bank procurement notices, LinkedIn,
-   vendor case studies, non-English search, academic acknowledgements)
-   based on what seems most promising for this country.
+2. Try **at most 2 search techniques**, in this preferred order:
+   1. **Entity-first** (always try this one): identify {COUNTRY}'s known
+      grid operator(s), major utilities, or energy regulator, then search
+      THEIR OWN documents (IRPs, system studies, tender notices,
+      "methodology" sections) for {TOOL} by name — e.g. `"<entity name>"
+      "{TOOL}"` — rather than a generic `{TOOL} {COUNTRY}` query.
+   2. Pick ONE more based on what seems most promising: conference
+      proceedings (`site:esig.energy {TOOL}`, `"{TOOL}" CIGRE {COUNTRY}`,
+      `"{TOOL}" IEEE PES {COUNTRY}`), development-bank procurement
+      notices, LinkedIn, vendor case studies, non-English search, or
+      academic acknowledgements.
 3. **A verbatim quote shown in a search engine's own result snippet is
    sufficient evidence by itself.** Do NOT download the original PDF/
    webpage/filing to re-verify a quote you already have from a search

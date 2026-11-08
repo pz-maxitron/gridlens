@@ -70,6 +70,7 @@ for COUNTRY in "${CANDIDATES[@]}"; do
     PROMPT="${PROMPT//\{EXISTING_COUNT\}/$COUNT}"
     PROMPT="${PROMPT//\{TOOL\}/$TOOL}"
     PROMPT="${PROMPT//\{TOOL_HINT\}/${TOOL_HINT[$TOOL]}}"
+    PROMPT="${PROMPT//\{TOOL_CONTEXT\}/${TOOL_CONTEXT[$TOOL]}}"
 
     hermes -p implementer chat -q "$PROMPT" > "$LOG" 2>&1
     RC=$?

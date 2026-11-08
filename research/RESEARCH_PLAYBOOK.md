@@ -31,6 +31,85 @@ LLM agent (or a human) picking this up cold, with no other context.
 8. `npm run build` to confirm nothing broke, then commit everything
    together (raw CSV diff + regenerated merged CSV/JSON + changelog entry).
 
+## Tool context — what each tool actually is (read before searching)
+
+Understanding *why* an organization would use a tool narrows down *who*
+to search for far better than pattern-matching the tool's name alone:
+
+- **PLEXOS (Energy Exemplar)** — integrated market simulation:
+  production-cost modeling, capacity expansion, transmission planning.
+  Typical users: system operators/ISOs/RTOs (market design/adequacy
+  studies), utilities' long-term resource-planning (IRP) teams, energy
+  regulators, generation owners/investors (asset valuation), and
+  consultancies doing commissioned studies for any of the above. Look in:
+  IRP filings, system adequacy studies, generation/transmission expansion
+  plans.
+- **PyPSA (open source)** — free, Python-based power-system optimization
+  toolbox (capacity expansion + dispatch). Academic/research-institute
+  origin; increasingly adopted by universities, government-funded
+  national labs, think tanks/NGOs doing decarbonization-pathway studies,
+  and — more recently — regulators/utilities piloting it as a
+  no-license-cost alternative. Look in: academic energy-system papers,
+  government "net zero"/pathway scenario reports, GitHub forks
+  configuring PyPSA for a specific country.
+- **PROMOD (PROMOD IV, Hitachi Energy, formerly ABB)** — detailed hourly
+  unit-commitment/dispatch and market simulation. Historically the
+  dominant tool for North American ISO/RTO market studies (PJM, MISO,
+  SPP, ERCOT, NYISO, ISO-NE) and US utility IRPs. Strongly North
+  America-centric — lower prior elsewhere, though multinational
+  consultancies sometimes use it for studies outside NA.
+- **Bid3 (Aurora Energy Research)** — fundamental power-market modeling
+  for price forecasting and asset valuation, used primarily BY AURORA
+  ITSELF as a consultancy to produce bespoke studies FOR clients
+  (investors, developers, utilities, regulators). **Important nuance:**
+  evidence is often "Aurora performed analysis for Client X using Bid3",
+  not Client X owning a Bid3 license — both Aurora (as
+  consultant_modeler/direct_user) and the client (as
+  commissioner/subject_of_study) can be legitimate separate rows per the
+  schema. Strongest presence in Europe (UK, Germany, Nordics) but
+  expanding — check Aurora's regional office pages per country.
+- **SDDP (PSR)** — stochastic dual dynamic programming for hydro-thermal
+  scheduling and long-term expansion planning under hydrological
+  uncertainty — especially relevant for hydro-heavy grids. Typical users:
+  national system operators (especially where hydropower dominates, e.g.
+  Brazil's ONS, which co-developed it), government energy-planning
+  agencies, regional planning councils, utilities with major hydro
+  assets. PSR's own deployment-country list (below) is a strong prior.
+
+## Search methodology (preferred order, not just technique list)
+
+A researcher doesn't just type "<tool> <country>" into a search box — that
+style of query mostly surfaces generic listicles and third-party
+mentions. Work in this order instead:
+
+1. **Entity-first.** Enumerate the country's known grid operator(s),
+   major utilities, and energy regulator BEFORE searching for the tool.
+   Then search those specific entities' own technical documents (IRPs,
+   system studies, tender notices, "methodology" sections) for the tool
+   name — `"<entity name>" "<tool name>"`, or `site:<entity's own
+   domain> <tool name>` if the domain is known. This is the single
+   strongest evidence class (see technique #1 below) and the reason it's
+   listed first here too.
+2. **Industry conference proceedings.** Utility/ISO engineers present
+   real case studies at technical conferences, routinely naming their
+   tools in methodology sections — a much higher signal-to-noise source
+   than generic search:
+   - **ESIG** (Energy Systems Integration Group) — `site:esig.energy
+     <tool name>`.
+   - **IEEE PES** (Power & Energy Society) — search `"<tool name>" IEEE
+     PES <country>` or `site:ieeexplore.ieee.org <tool name> <country>`.
+   - **CIGRE** (International Council on Large Electric Systems) —
+     search `"<tool name>" CIGRE <country>`.
+3. **Official vendor references** — case studies, client lists, webinar
+   recordings (see techniques #4/#7/#10 below). Useful as a *lead*, not
+   final evidence on their own (except the vendor's own deployment-country
+   lists, which are a reasonable prior for where to look, not proof of a
+   specific organization).
+4. **Generic web search** (tool name + country) — try this last; it's the
+   lowest signal-to-noise of the four and mostly surfaces the same
+   third-party mentions a more targeted search would catch with a cleaner
+   hit.
+
 ## Search techniques that have actually worked
 
 Roughly in order of how much they've produced, based on this dataset's
