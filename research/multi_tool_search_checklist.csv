@@ -1,6 +1,6 @@
 country,region,PLEXOS_status,PyPSA_status,PROMOD_status,Bid3_status,PSE_SDDP_status,overall_status
-United States,North America,not_started,not_started,not_started,not_started,not_started,not_started
-Canada,North America,not_started,not_started,not_started,not_started,not_started,not_started
+United States,North America,found_confirmed,found_confirmed,found_confirmed,found_candidate,found_confirmed,done
+Canada,North America,found_confirmed,found_confirmed,found_confirmed,found_confirmed,found_confirmed,done
 Mexico,North America,not_started,not_started,not_started,not_started,not_started,not_started
 Guatemala,Central America,not_started,not_started,not_started,not_started,not_started,not_started
 Belize,Central America,not_started,not_started,not_started,not_started,not_started,not_started
