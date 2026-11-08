@@ -249,6 +249,42 @@ def cmd_mark(country, *vals):
     print("marked", country)
 
 
+def cmd_auto_mark(country):
+    """Compute each tool's checklist status directly from the data (no LLM
+    judgment needed): found_confirmed if any confirmed row exists for that
+    country+tool, found_candidate if only candidate rows exist, else
+    no_evidence. Then calls mark with the computed values. Lets the driver
+    script finalize a country's checklist row without an LLM call."""
+    best = {t: None for t in TOOLS}  # None | "candidate" | "confirmed"
+    sources = [CATALOGUE] + sorted((ROOT / "data/raw/incoming").glob("*.jsonl"))
+    for path in sources:
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if r.get("country_label", "").strip() != country:
+                continue
+            t = r.get("tool_name", "").strip()
+            if t not in TOOLS:
+                continue
+            status = r.get("status")
+            if status == "confirmed":
+                best[t] = "confirmed"
+            elif status == "candidate" and best[t] != "confirmed":
+                best[t] = "candidate"
+
+    status_map = {"confirmed": "found_confirmed", "candidate": "found_candidate", None: "no_evidence"}
+    vals = [status_map[best[t]] for t in TOOLS]
+    cmd_mark(country, *vals)
+    print("computed:", dict(zip(TOOLS, vals)))
+
+
 def main():
     batch_id = sys.argv[1]
     cmd = sys.argv[2]
@@ -262,6 +298,8 @@ def main():
         cmd_mark(sys.argv[3], *sys.argv[4:9])
     elif cmd == "count":
         cmd_count(sys.argv[3])
+    elif cmd == "auto_mark":
+        cmd_auto_mark(sys.argv[3])
     else:
         raise SystemExit(__doc__)
 

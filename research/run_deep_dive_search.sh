@@ -1,12 +1,14 @@
 #!/bin/bash
-# Deep-dive driver: after the region-level pass marks a country "done",
-# check if it turned up enough confirmed/candidate entries to suggest a
-# single broad per-tool search undercounted a large/complex market (the
-# dynamic trigger the user asked for, instead of a fixed country list).
-# If so, run ONE additional targeted session for that country using
-# grid-operator/regional-structure search instead of a flat country-wide
-# search. Tracks which countries have already had a deep dive so re-runs
-# don't repeat it.
+# Deep-dive driver: after the main pass marks a country "done", check if
+# it turned up enough confirmed/candidate entries to suggest a single
+# broad per-tool search undercounted a large/complex market (the dynamic
+# trigger the user asked for, instead of a fixed country list). If so,
+# run one additional targeted session PER TOOL for that country, using
+# state/province-level search instead of a flat country-wide search.
+# Split per tool for the same reason the main pass is: a long
+# multi-tool session gives the model room to defer writing until "the
+# end", which observably never arrives. Tracks which countries have
+# already had a deep dive so re-runs don't repeat it.
 #
 # Usage: bash run_deep_dive_search.sh <BATCH_ID> [THRESHOLD]
 set -u
@@ -18,6 +20,7 @@ DONE_MARKER="research/.deep_dive_done"
 touch "$DONE_MARKER"
 
 TEMPLATE=$(cat research/DEEP_DIVE_SEARCH_PROMPT.md)
+TOOLS=("PLEXOS" "PyPSA" "PROMOD" "Bid3" "SDDP")
 
 mapfile -t CANDIDATES < <(
   python3 - "$BATCH_ID" <<'PYEOF'
@@ -56,22 +59,28 @@ for COUNTRY in "${CANDIDATES[@]}"; do
   fi
 
   SAFE_NAME=$(echo "$COUNTRY" | tr -c 'A-Za-z0-9' '_' | sed 's/_*$//')
-  LOG="research/logs/deep_dive/${BATCH_ID}_${SAFE_NAME}.log"
   echo "=== Deep dive: '${COUNTRY}' (count=${COUNT} >= ${THRESHOLD}) at $(date) ==="
 
-  PROMPT="${TEMPLATE//\{COUNTRY\}/$COUNTRY}"
-  PROMPT="${PROMPT//\{BATCH_ID\}/$BATCH_ID}"
-  PROMPT="${PROMPT//\{EXISTING_COUNT\}/$COUNT}"
+  for TOOL in "${TOOLS[@]}"; do
+    LOG="research/logs/deep_dive/${BATCH_ID}_${SAFE_NAME}_${TOOL}.log"
+    echo "--- deep dive ${COUNTRY} / ${TOOL} starting at $(date) ---"
 
-  hermes -p implementer chat -q "$PROMPT" > "$LOG" 2>&1
-  RC=$?
+    PROMPT="${TEMPLATE//\{COUNTRY\}/$COUNTRY}"
+    PROMPT="${PROMPT//\{BATCH_ID\}/$BATCH_ID}"
+    PROMPT="${PROMPT//\{EXISTING_COUNT\}/$COUNT}"
+    PROMPT="${PROMPT//\{TOOL\}/$TOOL}"
+
+    hermes -p implementer chat -q "$PROMPT" > "$LOG" 2>&1
+    RC=$?
+    if [ $RC -ne 0 ]; then
+      echo "--- deep dive ${COUNTRY} / ${TOOL} exited with code $RC at $(date) -- check $LOG ---"
+    else
+      echo "--- Finished deep dive ${COUNTRY} / ${TOOL} at $(date) ---"
+    fi
+  done
+
   echo "$MARKER_KEY" >> "$DONE_MARKER"
-
-  if [ $RC -ne 0 ]; then
-    echo "=== deep dive '${COUNTRY}' exited with code $RC at $(date) -- check $LOG ==="
-  else
-    echo "=== Finished deep dive '${COUNTRY}' at $(date) ==="
-  fi
+  echo "=== Finished deep dive '${COUNTRY}' (all 5 tools) at $(date) ==="
 done
 
 echo "=== $BATCH_ID: deep-dive pass complete at $(date) ==="
