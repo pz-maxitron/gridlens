@@ -97,7 +97,7 @@ python3 scripts/research_helpers.py {BATCH_ID} gap "{COUNTRY}" {TOOL} "<query-ur
   "source_title": "Title of the source document (or empty string)",
   "source_date": "Date of the source, free text (or empty string)",
   "source_url": "A real, working URL -- REQUIRED, never fabricate or guess one",
-  "exact_snippet_or_quote": "A direct quote from the source supporting the claim -- strongly preferred",
+  "exact_snippet_or_quote": "A direct quote from the source supporting the claim -- strongly preferred, and REQUIRED (non-empty) if status=confirmed",
   "why_it_supports_the_claim": "One sentence connecting the quote/source to the claim",
   "status": "confirmed | candidate | rejected | gap_confirmed",
   "historical_or_current": "current | historical",
