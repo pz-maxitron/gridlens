@@ -7,6 +7,22 @@ questions — make the best judgment call per the rules below and keep
 moving. This is a long autonomous run; checkpoint your progress file
 after every country so a crash loses at most one country's work.
 
+## Your working directory (CRITICAL — read this first)
+
+Your repo is at exactly this path, already checked out and ready:
+
+```
+/home/gmk/code/plexos-catalogue-web
+```
+
+`cd` there as your very first action and do all work from inside it.
+**Do not explore `/home/gmk` or any other directory. Do not investigate
+any `.bundle`, `.git`, or backup files you notice elsewhere on the
+machine — they are unrelated to this task and are not a signal that the
+repo is missing or needs to be checked out from somewhere else.** The
+path above is always correct; if `ls` shows it's empty or missing, stop
+and report that exact fact rather than searching for an alternative.
+
 ## Mission
 
 For EVERY country assigned to you below, search for organizations using
@@ -31,18 +47,17 @@ Work through them in the order listed in
 do not skip around or cherry-pick easy ones. For each country, search for
 ALL 5 tools before moving to the next country.
 
-## Before you start (read these in full, in this order)
+## Before you start (quick, don't over-read)
 
-1. `AGENTS.md` (repo root) — overall repo context.
-2. `data/DATA_SCHEMA.md` — the complete field reference and evidence
-   standards (summarized below, but this is the authoritative version).
-3. `research/RESEARCH_PLAYBOOK.md` — proven search techniques in priority
-   order, role-taxonomy discipline, how to handle stale negatives.
-4. `research/known_institutions.csv` — every organization already
-   confirmed in the dataset. **Check this before adding a finding** — if
-   an institution+tool+country combination is already here, don't re-add
-   it; if you find the SAME institution for a DIFFERENT tool or country
-   not already listed, that's still a valid new finding.
+1. `research/RESEARCH_PLAYBOOK.md` — proven search techniques, read once.
+2. That's it. The full record schema is already given to you inline
+   below — don't also go read `data/DATA_SCHEMA.md`, it says the same
+   thing at greater length and just burns your context budget.
+3. For `research/known_institutions.csv` (500+ rows): **don't read the
+   whole file.** Use `grep -i "<country name>"` against it right before
+   you start each country, to check only the rows relevant to that
+   country. Re-reading the full file per country wastes time for no
+   benefit.
 
 ## Your reserved id prefix (DO NOT deviate from this)
 
@@ -129,8 +144,7 @@ pipeline computes them automatically.
    as your `use_case` — write what the SPECIFIC evidence actually says the
    organization does.
 
-## Search techniques, in priority order (try multiple per country+tool
-before giving up and marking gap_confirmed)
+## Search techniques, in priority order (be efficient — see pacing below)
 
 1. The organization's own first-person documents (national planning
    documents, tender notices, press releases).
@@ -148,6 +162,34 @@ before giving up and marking gap_confirmed)
 
 See `research/RESEARCH_PLAYBOOK.md` for the full detail and worked
 examples of each technique.
+
+## Pacing (loosened — this is the part that was too slow before)
+
+**Try at most 2 search techniques per country+tool, not all 6.** Start
+with technique 1 (first-person docs) and one other technique that seems
+most promising for that specific country (e.g. technique 2 for a
+government utility, technique 5 if English search is clearly thin). If
+neither turns up anything, write `status=gap_confirmed` and move on —
+don't keep digging. A later wave can always go deeper on a specific
+gap; a full first pass across every country matters more right now than
+exhaustive depth on any one of them.
+
+**For small or clearly-unlikely countries** (e.g. small island states,
+micro-states with no bulk power system of meaningful scale), it's fine
+to do one combined quick search per country rather than 2 techniques ×
+5 tools separately, and write `gap_confirmed` rows for all 5 tools at
+once with a shared one-line `notes` explanation if nothing turns up.
+Don't force the same depth of effort onto a 10,000-person island as a
+major grid operator.
+
+**Don't re-verify things you're already confident about.** If a vendor
+case-study page plus one independent corroborating mention both point
+the same way, that's enough for `status=confirmed` — you don't need a
+third source.
+
+The only hard rule that never loosens: never fabricate a URL or quote.
+`candidate` or `gap_confirmed` are always fine outcomes; a fabricated
+`confirmed` is not.
 
 ## Progress tracking (do this as you go, not just at the end)
 
@@ -169,9 +211,8 @@ and every finding (confirmed, candidate, or gap_confirmed) is written to
 yourself — that's a separate coordination step run once, after all
 parallel batches finish, so it isn't a concurrent-write risk either.
 
-Quality over speed: you have 14 hours for this. Do not rush through
-countries superficially to "finish early" — a country marked
-`no_evidence` after only one search technique is a worse outcome than
-the same country still showing `in_progress` with real effort behind it.
-Try multiple techniques per country+tool before concluding there's no
-evidence.
+Move at a steady, sustainable pace: 2 search techniques per country+tool
+(fewer for clearly small/unlikely countries) is enough — see the Pacing
+section above. The goal is a complete first pass across every assigned
+country, with honest `gap_confirmed` rows where nothing was found,
+rather than exhaustive depth on only the first few countries.

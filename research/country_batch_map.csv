@@ -1,0 +1,201 @@
+country,region,batch_id
+United States,North America,MTS1-A
+Canada,North America,MTS1-A
+Mexico,North America,MTS1-A
+Guatemala,Central America,MTS1-A
+Belize,Central America,MTS1-A
+Honduras,Central America,MTS1-A
+El Salvador,Central America,MTS1-A
+Nicaragua,Central America,MTS1-A
+Costa Rica,Central America,MTS1-A
+Panama,Central America,MTS1-A
+Cuba,Caribbean,MTS1-A
+Dominican Republic,Caribbean,MTS1-A
+Haiti,Caribbean,MTS1-A
+Jamaica,Caribbean,MTS1-A
+Trinidad and Tobago,Caribbean,MTS1-A
+Bahamas,Caribbean,MTS1-A
+Puerto Rico,Caribbean,MTS1-A
+Antigua and Barbuda,Caribbean,MTS1-A
+Barbados,Caribbean,MTS1-A
+Dominica,Caribbean,MTS1-A
+Grenada,Caribbean,MTS1-A
+Saint Kitts and Nevis,Caribbean,MTS1-A
+Saint Lucia,Caribbean,MTS1-A
+Saint Vincent and the Grenadines,Caribbean,MTS1-A
+Brazil,South America,MTS1-A
+Argentina,South America,MTS1-A
+Chile,South America,MTS1-A
+Peru,South America,MTS1-A
+Colombia,South America,MTS1-A
+Venezuela,South America,MTS1-A
+Ecuador,South America,MTS1-A
+Bolivia,South America,MTS1-A
+Paraguay,South America,MTS1-A
+Uruguay,South America,MTS1-A
+Guyana,South America,MTS1-A
+Suriname,South America,MTS1-A
+United Kingdom,Western Europe,MTS1-B
+Ireland,Western Europe,MTS1-B
+Germany,Western Europe,MTS1-B
+France,Western Europe,MTS1-B
+Netherlands,Western Europe,MTS1-B
+Belgium,Western Europe,MTS1-B
+Luxembourg,Western Europe,MTS1-B
+Switzerland,Western Europe,MTS1-B
+Austria,Western Europe,MTS1-B
+Andorra,Western Europe,MTS1-B
+Liechtenstein,Western Europe,MTS1-B
+Monaco,Western Europe,MTS1-B
+Spain,Southern Europe,MTS1-B
+Portugal,Southern Europe,MTS1-B
+Italy,Southern Europe,MTS1-B
+Greece,Southern Europe,MTS1-B
+Malta,Southern Europe,MTS1-B
+Cyprus,Southern Europe,MTS1-B
+San Marino,Southern Europe,MTS1-B
+Vatican City,Southern Europe,MTS1-B
+Poland,Eastern Europe,MTS1-B
+Czech Republic,Eastern Europe,MTS1-B
+Slovakia,Eastern Europe,MTS1-B
+Hungary,Eastern Europe,MTS1-B
+Romania,Eastern Europe,MTS1-B
+Bulgaria,Eastern Europe,MTS1-B
+Ukraine,Eastern Europe,MTS1-B
+Belarus,Eastern Europe,MTS1-B
+Moldova,Eastern Europe,MTS1-B
+Russia,Eastern Europe,MTS1-B
+Croatia,Balkans,MTS1-B
+Serbia,Balkans,MTS1-B
+Bosnia and Herzegovina,Balkans,MTS1-B
+Slovenia,Balkans,MTS1-B
+North Macedonia,Balkans,MTS1-B
+Albania,Balkans,MTS1-B
+Montenegro,Balkans,MTS1-B
+Kosovo,Balkans,MTS1-B
+Sweden,Nordics,MTS1-B
+Norway,Nordics,MTS1-B
+Denmark,Nordics,MTS1-B
+Finland,Nordics,MTS1-B
+Iceland,Nordics,MTS1-B
+Estonia,Baltics,MTS1-B
+Latvia,Baltics,MTS1-B
+Lithuania,Baltics,MTS1-B
+Nigeria,West Africa,MTS1-C
+Ghana,West Africa,MTS1-C
+Senegal,West Africa,MTS1-C
+Ivory Coast,West Africa,MTS1-C
+Mali,West Africa,MTS1-C
+Guinea,West Africa,MTS1-C
+Benin,West Africa,MTS1-C
+Togo,West Africa,MTS1-C
+Sierra Leone,West Africa,MTS1-C
+Liberia,West Africa,MTS1-C
+Burkina Faso,West Africa,MTS1-C
+Niger,West Africa,MTS1-C
+Cabo Verde,West Africa,MTS1-C
+Gambia,West Africa,MTS1-C
+Guinea-Bissau,West Africa,MTS1-C
+Mauritania,West Africa,MTS1-C
+Cameroon,Central Africa,MTS1-C
+Central African Republic,Central Africa,MTS1-C
+Chad,Central Africa,MTS1-C
+Congo (Republic of the),Central Africa,MTS1-C
+Democratic Republic of the Congo,Central Africa,MTS1-C
+Equatorial Guinea,Central Africa,MTS1-C
+Gabon,Central Africa,MTS1-C
+Sao Tome and Principe,Central Africa,MTS1-C
+Egypt,North Africa,MTS1-C
+Libya,North Africa,MTS1-C
+Tunisia,North Africa,MTS1-C
+Algeria,North Africa,MTS1-C
+Morocco,North Africa,MTS1-C
+Sudan,North Africa,MTS1-C
+Kenya,East Africa,MTS1-D
+Tanzania,East Africa,MTS1-D
+Uganda,East Africa,MTS1-D
+Ethiopia,East Africa,MTS1-D
+Rwanda,East Africa,MTS1-D
+Burundi,East Africa,MTS1-D
+Somalia,East Africa,MTS1-D
+Djibouti,East Africa,MTS1-D
+Eritrea,East Africa,MTS1-D
+South Sudan,East Africa,MTS1-D
+Comoros,East Africa,MTS1-D
+Madagascar,East Africa,MTS1-D
+Mauritius,East Africa,MTS1-D
+Seychelles,East Africa,MTS1-D
+South Africa,Southern Africa,MTS1-D
+Zimbabwe,Southern Africa,MTS1-D
+Zambia,Southern Africa,MTS1-D
+Botswana,Southern Africa,MTS1-D
+Namibia,Southern Africa,MTS1-D
+Mozambique,Southern Africa,MTS1-D
+Malawi,Southern Africa,MTS1-D
+Lesotho,Southern Africa,MTS1-D
+Eswatini,Southern Africa,MTS1-D
+Angola,Southern Africa,MTS1-D
+DRC,Southern Africa,MTS1-D
+Saudi Arabia,Middle East,MTS1-E
+United Arab Emirates,Middle East,MTS1-E
+Qatar,Middle East,MTS1-E
+Kuwait,Middle East,MTS1-E
+Bahrain,Middle East,MTS1-E
+Oman,Middle East,MTS1-E
+Israel,Middle East,MTS1-E
+Jordan,Middle East,MTS1-E
+Lebanon,Middle East,MTS1-E
+Iraq,Middle East,MTS1-E
+Iran,Middle East,MTS1-E
+Yemen,Middle East,MTS1-E
+Syria,Middle East,MTS1-E
+Palestine,Middle East,MTS1-E
+Turkey,Middle East,MTS1-E
+Georgia,Caucasus,MTS1-E
+Armenia,Caucasus,MTS1-E
+Azerbaijan,Caucasus,MTS1-E
+Kazakhstan,Central Asia,MTS1-E
+Uzbekistan,Central Asia,MTS1-E
+Turkmenistan,Central Asia,MTS1-E
+Kyrgyzstan,Central Asia,MTS1-E
+Tajikistan,Central Asia,MTS1-E
+India,South Asia,MTS1-F
+Pakistan,South Asia,MTS1-F
+Bangladesh,South Asia,MTS1-F
+Sri Lanka,South Asia,MTS1-F
+Nepal,South Asia,MTS1-F
+Bhutan,South Asia,MTS1-F
+Afghanistan,South Asia,MTS1-F
+Maldives,South Asia,MTS1-F
+Indonesia,Southeast Asia,MTS1-F
+Thailand,Southeast Asia,MTS1-F
+Vietnam,Southeast Asia,MTS1-F
+Philippines,Southeast Asia,MTS1-F
+Malaysia,Southeast Asia,MTS1-F
+Singapore,Southeast Asia,MTS1-F
+Myanmar,Southeast Asia,MTS1-F
+Cambodia,Southeast Asia,MTS1-F
+Laos,Southeast Asia,MTS1-F
+Brunei,Southeast Asia,MTS1-F
+Timor-Leste,Southeast Asia,MTS1-F
+China,East Asia,MTS1-F
+Japan,East Asia,MTS1-F
+South Korea,East Asia,MTS1-F
+North Korea,East Asia,MTS1-F
+Taiwan,East Asia,MTS1-F
+Mongolia,East Asia,MTS1-F
+Hong Kong,East Asia,MTS1-F
+Australia,Oceania,MTS1-F
+New Zealand,Oceania,MTS1-F
+Papua New Guinea,Oceania,MTS1-F
+Fiji,Oceania,MTS1-F
+Solomon Islands,Oceania,MTS1-F
+Vanuatu,Oceania,MTS1-F
+Samoa,Oceania,MTS1-F
+Kiribati,Oceania,MTS1-F
+Marshall Islands,Oceania,MTS1-F
+Micronesia,Oceania,MTS1-F
+Nauru,Oceania,MTS1-F
+Palau,Oceania,MTS1-F
+Tonga,Oceania,MTS1-F
+Tuvalu,Oceania,MTS1-F
