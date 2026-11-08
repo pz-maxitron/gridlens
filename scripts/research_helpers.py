@@ -70,7 +70,22 @@ TOOL_DESC = {
 }
 
 
+# Sources that would make a finding circular: our own published catalogue
+# (and its predecessor) list the very answers being searched for. Rejected
+# for every batch, and essential for blind method evaluations.
+SELF_REFERENTIAL = ("gridlens.org", "esm-usage-catalog", "open-energy-transition/gridlens",
+                    "pz-maxitron/gridlens")
+
+
+def is_eval(batch_id):
+    """EVAL-* batches are blind method tests: written to data/raw/eval/,
+    never merged into the dataset, and never shown the existing catalogue."""
+    return batch_id.startswith("EVAL-")
+
+
 def incoming_path(batch_id):
+    if is_eval(batch_id):
+        return ROOT / f"data/raw/eval/{batch_id}.jsonl"
     return ROOT / f"data/raw/incoming/{batch_id}.jsonl"
 
 
@@ -121,6 +136,8 @@ def _validate(r, batch_id, is_gap=False):
     u = r.get("source_url")
     if not (isinstance(u, str) and u.startswith("http")):
         errs.append(f"source_url must be a real http(s) URL, got: {u!r}")
+    elif any(s in u.lower() for s in SELF_REFERENTIAL):
+        errs.append("source_url is our own catalogue (circular evidence) -- cite the original source instead")
     if not isinstance(r.get("tool_explicitly_named"), bool):
         errs.append("tool_explicitly_named must be bool")
     if not is_gap and r.get("status") == "confirmed" and not r.get("exact_snippet_or_quote"):
@@ -140,7 +157,23 @@ def _append(r, batch_id):
     return rid
 
 
-def cmd_existing(country):
+def cmd_existing(batch_id, country):
+    if is_eval(batch_id):
+        # Blind test: show only what THIS method has found so far (EVAL-C is
+        # a critique pass layered on EVAL-B, so it also sees B's rows).
+        files = [incoming_path(batch_id)]
+        if batch_id == "EVAL-C":
+            files.insert(0, incoming_path("EVAL-B"))
+        for path in files:
+            if not path.exists():
+                continue
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                if r.get("country_label", "").strip() == country:
+                    print(f"{r.get('tool_name',''):8s} | {r.get('institution_name','')[:80]} | {r.get('status','')} | {r.get('id','')}")
+        return
     if not CATALOGUE.exists():
         print("(catalogue missing)")
         return
@@ -320,7 +353,7 @@ def main():
     batch_id = sys.argv[1]
     cmd = sys.argv[2]
     if cmd == "existing":
-        cmd_existing(sys.argv[3])
+        cmd_existing(batch_id, sys.argv[3])
     elif cmd == "add":
         cmd_add(batch_id, sys.argv[3])
     elif cmd == "gap":
