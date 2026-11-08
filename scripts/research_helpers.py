@@ -228,6 +228,8 @@ def cmd_count(country):
 
 
 def cmd_mark(country, *vals):
+    overall = vals[-1] if len(vals) == 6 else "done"
+    tool_vals = vals[:5]
     lines = CHECKLIST.read_text(encoding="utf-8").splitlines()
     out = []
     done = False
@@ -235,9 +237,9 @@ def cmd_mark(country, *vals):
         if ln.split(",")[0] == country:
             parts = ln.split(",")
             assert len(parts) == 8, parts
-            for i, v in enumerate(vals, start=2):
+            for i, v in enumerate(tool_vals, start=2):
                 parts[i] = v
-            parts[7] = "done"
+            parts[7] = overall
             out.append(",".join(parts))
             done = True
         else:
@@ -246,16 +248,24 @@ def cmd_mark(country, *vals):
     if not done:
         print("COUNTRY NOT FOUND IN CHECKLIST")
         sys.exit(2)
-    print("marked", country)
+    print("marked", country, "overall_status=" + overall)
 
 
 def cmd_auto_mark(country):
     """Compute each tool's checklist status directly from the data (no LLM
     judgment needed): found_confirmed if any confirmed row exists for that
-    country+tool, found_candidate if only candidate rows exist, else
-    no_evidence. Then calls mark with the computed values. Lets the driver
-    script finalize a country's checklist row without an LLM call."""
-    best = {t: None for t in TOOLS}  # None | "candidate" | "confirmed"
+    country+tool, found_candidate if only candidate rows exist, no_evidence
+    if a gap_confirmed row exists (a real search completed, genuinely
+    nothing found). If a tool has NO row at all (its session crashed
+    before writing anything, or hasn't run yet), its existing checklist
+    value is left untouched rather than being overwritten to no_evidence
+    -- that would wrongly conflate 'never actually searched' with 'searched
+    and confirmed negative', and would silently skip a real retry.
+    overall_status only becomes 'done' once all 5 tools have SOME
+    resolved value (not 'not_started'); otherwise it stays 'not_started'
+    so the country is picked up again next time to retry just the
+    still-missing tool(s)."""
+    best = {t: None for t in TOOLS}  # None | "gap" | "candidate" | "confirmed"
     sources = [CATALOGUE] + sorted((ROOT / "data/raw/incoming").glob("*.jsonl"))
     for path in sources:
         if not path.exists():
@@ -274,15 +284,36 @@ def cmd_auto_mark(country):
             if t not in TOOLS:
                 continue
             status = r.get("status")
-            if status == "confirmed":
+            rank = {"confirmed": 3, "candidate": 2, "gap_confirmed": 1}.get(status, 0)
+            cur_rank = {"confirmed": 3, "candidate": 2, "gap": 1, None: 0}[best[t]]
+            if rank == 3:
                 best[t] = "confirmed"
-            elif status == "candidate" and best[t] != "confirmed":
+            elif rank == 2 and cur_rank < 2:
                 best[t] = "candidate"
+            elif rank == 1 and cur_rank < 1:
+                best[t] = "gap"
 
-    status_map = {"confirmed": "found_confirmed", "candidate": "found_candidate", None: "no_evidence"}
-    vals = [status_map[best[t]] for t in TOOLS]
-    cmd_mark(country, *vals)
-    print("computed:", dict(zip(TOOLS, vals)))
+    existing_row = None
+    for ln in CHECKLIST.read_text(encoding="utf-8").splitlines():
+        if ln.split(",")[0] == country:
+            existing_row = ln.split(",")
+            break
+    if existing_row is None:
+        print("COUNTRY NOT FOUND IN CHECKLIST")
+        sys.exit(2)
+    existing_vals = existing_row[2:7]
+
+    status_map = {"confirmed": "found_confirmed", "candidate": "found_candidate", "gap": "no_evidence"}
+    vals = []
+    for i, t in enumerate(TOOLS):
+        if best[t] is not None:
+            vals.append(status_map[best[t]])
+        else:
+            vals.append(existing_vals[i])  # leave untouched -- crashed/not yet run
+
+    overall = "done" if all(v != "not_started" for v in vals) else "not_started"
+    cmd_mark(country, *vals, overall)
+    print("computed:", dict(zip(TOOLS, vals)), "overall_status=" + overall)
 
 
 def main():

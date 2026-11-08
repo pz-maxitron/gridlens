@@ -60,6 +60,23 @@ for COUNTRY in "${COUNTRIES[@]}"; do
   echo "=== Starting ${COUNTRY} (${BATCH_ID}) at $(date) ==="
 
   for TOOL in "${TOOLS[@]}"; do
+    CURRENT_STATUS=$(python3 - "$COUNTRY" "$TOOL" <<'PYEOF'
+import csv, sys
+country, tool = sys.argv[1], sys.argv[2]
+col = {"PLEXOS": "PLEXOS_status", "PyPSA": "PyPSA_status", "PROMOD": "PROMOD_status",
+       "Bid3": "Bid3_status", "SDDP": "PSE_SDDP_status"}[tool]
+with open("research/multi_tool_search_checklist.csv") as f:
+    for row in csv.DictReader(f):
+        if row["country"] == country:
+            print(row[col])
+            break
+PYEOF
+)
+    if [ "$CURRENT_STATUS" != "not_started" ]; then
+      echo "--- ${COUNTRY} / ${TOOL} already resolved (${CURRENT_STATUS}) -- skipping ---"
+      continue
+    fi
+
     LOG="research/logs/tools/${BATCH_ID}_${SAFE_COUNTRY}_${TOOL}.log"
     echo "--- ${COUNTRY} / ${TOOL} starting at $(date) ---"
 
@@ -77,9 +94,12 @@ for COUNTRY in "${COUNTRIES[@]}"; do
     fi
   done
 
-  # Bookkeeping, no LLM involved -- can't be skipped or forgotten.
+  # Bookkeeping, no LLM involved -- can't be skipped or forgotten. Only
+  # marks overall_status=done once every tool has SOME resolved value;
+  # a crashed tool (no row, no checklist update) stays not_started so
+  # this country gets picked up again to retry just that tool.
   python3 scripts/research_helpers.py "$BATCH_ID" auto_mark "$COUNTRY"
-  echo "=== Finished ${COUNTRY} (all 5 tools) at $(date) ==="
+  echo "=== Finished ${COUNTRY} pass at $(date) ==="
 done
 
 echo "=== $BATCH_ID: all remaining countries processed at $(date) ==="
