@@ -789,6 +789,13 @@ def main():
         all_hits = hits
         doc_hits = []
 
+    # A healthy run sees 250-500 unique URLs. Far fewer means the search
+    # engines failed (rate limits), not that nothing exists: exit 2 so the
+    # caller retries instead of recording a false negative.
+    if n_raw < 100:
+        log(f"ENGINE_FAILURE: only {n_raw} unique URLs from {n_jobs} engine calls -- not judging")
+        sys.exit(2)
+
     findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
     rej_lines = []
 

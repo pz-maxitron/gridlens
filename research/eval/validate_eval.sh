@@ -13,7 +13,7 @@ LOG_DIR="research/logs/eval/validator/${VALIDATOR_PROFILE}"
 mkdir -p "$LOG_DIR"
 
 # Unique temp file, removed at exit
-TMPROWS=$(mktemp)
+export TMPROWS=$(mktemp)
 trap 'rm -f "$TMPROWS"' EXIT
 
 touch "$VERDICTS"
