@@ -31,7 +31,7 @@ backends):
   ~/.cache/gridlens-eval-venv/bin/python research/eval/approach_d.py EVAL-D Germany PLEXOS
 
 Environment:
-  D_VARIANT:   "d2" (b17afdc prompt + acceptance) or "d3" (current, default).
+  D_VARIANT:   "d2" (b17afdc prompt + acceptance), "d3" (current, default), or "d4" (three-perspective plan, document-first, attribution).
   LLM_BACKEND: "local" (default, gateway) or "hermes:<profile>".
 """
 import concurrent.futures as cf
@@ -284,7 +284,7 @@ Return {{"findings": []}} if no hit qualifies.
 
 def judge(country, tool, batch):
     variant = os.environ.get("D_VARIANT", "d3")
-    if variant == "d2":
+    if variant in ("d2", "d4"):
         prompt = judge_prompt_d2(country, tool, batch)
     else:
         prompt = judge_prompt_d3(country, tool, batch)
@@ -356,7 +356,7 @@ def _accept_d3(f, quote, country, tool):
 def accept_finding(f, quote, country, tool):
     """Unified acceptance: dispatches to d2 or d3 rule."""
     variant = os.environ.get("D_VARIANT", "d3")
-    if variant == "d2":
+    if variant in ("d2", "d4"):
         ok, reason = accept_d2(f, country)
         return ok, reason, False
     return _accept_d3(f, quote, country, tool)
@@ -482,6 +482,218 @@ Up to 25 entities."""
     return ents, qs
 
 
+# ---------------------------------------------------------- D4 helpers ----
+# plan_d3 is the existing plan() function (used in d3 code path)
+
+
+def plan_d4(country, tool):
+    """Three-perspective plan: domestic, outside, research."""
+    tool_desc = tool_context(tool)
+    prompts = [
+        f"""You are planning a web search for evidence that organizations in {country} use the energy-modelling software {tool} ({VENDOR[tool]}).
+What the tool is for: {tool_desc}
+
+PART 1: {country} DOMESTIC POWER-SYSTEM ACTORS.
+List the {country} domestic power-system actors most likely to use, commission, or study {tool}:
+- energy ministry / energy / planning agency
+- energy regulator
+- TSO / ISO / market operator
+- main utilities and generation companies
+
+For each entity give: name (official English), local_name (in {country}'s own language if different), type (one of: ministry, regulator, tso, utility, generator, other).
+Also note any published planning studies (generation/transmission expansion plans, network development plans, adequacy assessments, master plans, integrated resource plans, long-term outlooks).
+
+Reply with JSON only:
+{{"entities": [{{"name": "...", "local_name": "...", "type": "..."}}], "studies": [{{"entity": "...", "title": "..."}}]}}
+Cap up to 20 entities and 20 studies."""
+        ,
+        f"""You are planning a web search for evidence that organizations in {country} use the energy-modelling software {tool} ({VENDOR[tool]}).
+What the tool is for: {tool_desc}
+
+PART 2: OUTSIDE ACTORS WORKING ON {country}'S POWER SECTOR.
+List outside actors working on {country}'s power sector:
+- development banks (World Bank, AfDB, etc.)
+- donor agencies (USAID, GIZ, SIDA, etc.)
+- foreign consultancies
+- equipment vendors
+- regional bodies (regional power pools, regional market operators, ENTSO-E, etc.)
+
+For each give: name, local_name (if different), type (one of: development_bank, donor_agency, consultancy, vendor, regional_body, other).
+For each, note any studies they published about {country}'s power/energy sector.
+
+Reply with JSON only:
+{{"entities": [{{"name": "...", "local_name": "...", "type": "..."}}], "studies": [{{"entity": "...", "title": "..."}}]}}
+Cap up to 20 entities and 20 studies."""
+        ,
+        f"""You are planning a web search for evidence that organizations in {country} use the energy-modelling software {tool} ({VENDOR[tool]}).
+What the tool is for: {tool_desc}
+
+PART 3: RESEARCH ACTORS IN OR ABOUT {country}.
+List research actors in or about {country}:
+- universities active in energy-system modelling
+- research institutes
+- think tanks
+
+For each give: name, local_name (if different), type (one of: university, research_institute, think_tank, other).
+For each, note any energy-system studies they published about {country}.
+
+Reply with JSON only:
+{{"entities": [{{"name": "...", "local_name": "...", "type": "..."}}], "studies": [{{"entity": "...", "title": "..."}}]}}
+Cap up to 20 entities and 20 studies."""
+    ]
+    all_ents, all_studies = [], []
+    for prompt in prompts:
+        result = parse_json(llm(prompt, max_tokens=3000)) or {}
+        all_ents.extend(result.get("entities", []))
+        all_studies.extend(result.get("studies", []))
+    seen = {}
+    for e in all_ents:
+        if not isinstance(e, dict):
+            continue
+        n = e.get("name", "")
+        if not n:
+            continue
+        key = squash(n)
+        if key not in seen:
+            seen[key] = e
+    return list(seen.values())[:40], all_studies[:15]
+
+
+def fetch_url_text(url):
+    """Fetch text from a URL. PDFs downloaded and extracted with pypdf."""
+    import httpx, io, pypdf, time
+    # Detect PDF by .pdf extension or Content-Type (HEAD with 10s timeout)
+    is_pdf = url.lower().endswith(".pdf")
+    if not is_pdf:
+        try:
+            with httpx.Client(timeout=10.0) as cl:
+                r = cl.head(url, follow_redirects=True)
+                if r.status_code == 200 and "application/pdf" in r.headers.get("content-type", ""):
+                    is_pdf = True
+        except Exception:
+            pass  # HEAD failed → fall through to keyless extractors below
+    if is_pdf:
+        try:
+            buf = io.BytesIO()
+            t_start = time.monotonic()
+            with httpx.Client(timeout=httpx.Timeout(30.0)) as cl:
+                with cl.stream("GET", url, follow_redirects=True) as r:
+                    r.raise_for_status()
+                    for chunk in r.iter_bytes():
+                        if buf.tell() + len(chunk) > 40 * 1024 * 1024:
+                            return ""
+                        buf.write(chunk)
+            buf.seek(0)
+            reader = pypdf.PdfReader(buf)
+            text_pages = []
+            for i, page in enumerate(reader.pages[:400]):
+                if time.monotonic() - t_start > 90:
+                    break
+                text_pages.append(page.extract_text() or "")
+            return "\n".join(text_pages)
+        except Exception:
+            return ""
+    # Keyless extractors: each takes a LIST of URLs and returns a LIST of dicts
+    for ext in ("exa_extract_keyless", "parallel_extract_keyless", "keenable_extract_keyless"):
+        try:
+            fn = getattr(web, ext, None)
+            if fn:
+                res = fn([url])
+                if isinstance(res, list) and res:
+                    content = res[0].get("content") or ""
+                    if content:
+                        return str(content).strip()
+        except Exception:
+            continue
+    return ""
+
+
+def build_doc_windows(text, tool):
+    """Find tool mentions, build merged windows of +/-1200 chars."""
+    aliases = ALIASES.get(tool, [tool.lower()])
+    spans = []
+    for a in aliases:
+        for m in re.finditer(r"\b" + re.escape(a) + r"\b", text, re.IGNORECASE):
+            spans.append((max(0, m.start() - 1200), min(len(text), m.end() + 1200)))
+    if not spans:
+        return None
+    spans.sort()
+    merged = []
+    for s, e in spans:
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return " [...] ".join(text[s:e] for s, e in merged[:3])
+
+
+def search_studies(studies, stats):
+    """Search each study entity+title across all engines. Capped at 25 unique URLs."""
+    result = []
+    global_seen = set()
+    for study in studies[:15]:
+        entity = study.get("entity", "")
+        title = study.get("title", "")
+        if not entity or not title:
+            continue
+        query = f"{entity} {title}"
+        stats["doc_queries"] += 1
+        study_seen, study_urls = set(), []
+        for engine in ENGINES:
+            try:
+                res = getattr(web, f"{engine}_search_keyless")(query, 5)
+                for h in (res.get("data") or {}).get("web", [])[:5]:
+                    u = h.get("url", "")
+                    if u and u.startswith("http"):
+                        uk = norm_url(u)
+                        if uk not in study_seen:
+                            study_seen.add(uk)
+                            study_urls.append(u)
+            except Exception:
+                pass
+        for u in study_urls[:2]:
+            uk = norm_url(u)
+            if uk not in global_seen and len(result) < 25:
+                global_seen.add(uk)
+                result.append((u, entity, title))
+    return result
+
+
+def fetch_documents(url_list, tool, stats):
+    """Fetch text from URLs, build doc hits with tool windows."""
+    doc_hits = []
+    for url, entity, title in url_list:
+        stats["docs_fetched"] += 1
+        text = fetch_url_text(url)
+        if not text:
+            continue
+        hit_text = build_doc_windows(text, tool)
+        if hit_text:
+            stats["docs_with_tool"] += 1
+            doc_hits.append({
+                "url": url, "text": hit_text,
+                "title": f"{entity} - {title}",
+                "engines": {"study"},
+                "queries": {f"{entity} {title}"},
+            })
+    stats["doc_hits"] = len(doc_hits)
+    return doc_hits
+
+
+def attribution_check(org, tool, vendor, country, hit_url, hit_text):
+    """Attribution: does text show org used/commissioned/developed/studied the tool?"""
+    snippet = hit_text[:2000] if len(hit_text) > 2000 else hit_text
+    prompt = (f"Text (from {hit_url}):\n{snippet}\n\n"
+              f"Question: does this text show that {org} itself used, commissioned,\n"
+              f"developed, or studied with {tool} ({vendor}) in work on {country}?\n"
+              f"Answer with one word: YES, NO or UNCLEAR.")
+    result = llm(prompt, max_tokens=50, think=False).strip().upper()
+    for word in ("YES", "NO", "UNCLEAR"):
+        if word in result:
+            return word
+    return "UNCLEAR"
+
+
 # --------------------------------------------------------------- FILTER ----
 def squash(s):
     s = unicodedata.normalize("NFKC", s)
@@ -541,18 +753,47 @@ def main():
     CUR["tool"] = tool
     t0 = time.time()
     log(f"=== approach D: {country} / {tool} ===")
-    ents, extra = plan(country, tool)
-    log(f"plan: {len(ents)} entities, {len(extra)} extra queries")
-    queries = build_queries(country, tool, ents, extra)
-    n_jobs, n_raw, hits = search_all(queries, tool)
-    log(f"search: {len(queries)} queries / {n_jobs} engine calls -> "
-        f"{n_raw} unique URLs -> {len(hits)} mention {tool}")
+
+    variant = os.environ.get("D_VARIANT", "d3")
+    stats_extra = {
+        "doc_queries": 0, "docs_fetched": 0, "docs_with_tool": 0,
+        "doc_hits": 0, "attribution_no": 0, "attribution_unclear": 0,
+    }
+
+    if variant == "d4":
+        ents, studies = plan_d4(country, tool)
+        log(f"plan: {len(ents)} entities, {len(studies)} studies")
+        queries = build_queries(country, tool, ents, [])
+
+        doc_urls = search_studies(studies, stats_extra)
+        doc_hits = fetch_documents(doc_urls, tool, stats_extra)
+        log(f"docs: {stats_extra['doc_queries']} queries, {stats_extra['docs_fetched']} fetched, "
+            f"{stats_extra['docs_with_tool']} with tool, {stats_extra['doc_hits']} hits")
+
+        n_jobs, n_raw, hits = search_all(queries, tool)
+        log(f"search: {len(queries)} queries / {n_jobs} engine calls -> "
+            f"{n_raw} unique URLs -> {len(hits)} mention {tool}")
+
+        seen_doc = {norm_url(d["url"]) for d in doc_hits[:40]}
+        normal_hits = [h for h in hits[:100] if norm_url(h["url"]) not in seen_doc]
+        all_hits = list(doc_hits[:40]) + normal_hits
+        log(f"judging: {len(doc_hits[:40])} doc + {len(normal_hits)} normal = {len(all_hits)} total")
+
+    else:
+        ents, extra = plan(country, tool)
+        log(f"plan: {len(ents)} entities, {len(extra)} extra queries")
+        queries = build_queries(country, tool, ents, extra)
+        n_jobs, n_raw, hits = search_all(queries, tool)
+        log(f"search: {len(queries)} queries / {n_jobs} engine calls -> "
+            f"{n_raw} unique URLs -> {len(hits)} mention {tool}")
+        all_hits = hits
+        doc_hits = []
 
     findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
     rej_lines = []
-    variant = os.environ.get("D_VARIANT", "d3")
-    for i in range(0, len(hits), JUDGE_BATCH):
-        batch = hits[i:i + JUDGE_BATCH]
+
+    for i in range(0, len(all_hits), JUDGE_BATCH):
+        batch = all_hits[i:i + JUDGE_BATCH]
         for f in judge(country, tool, batch):
             try:
                 h = batch[int(f.get("hit", -1))]
@@ -583,7 +824,6 @@ def main():
                     "reason": "NOT_VERBATIM", "url": h.get("url", ""),
                 })
                 continue
-            # Acceptance filter
             accept, reason, cap_candidate = accept_finding(f, quote, country, tool)
             if not accept:
                 if reason == "WRONG_COUNTRY":
@@ -601,14 +841,39 @@ def main():
                     "reason": reason, "url": h.get("url", ""),
                 })
                 continue
+
+            attr = "YES"
+            if variant == "d4":
+                org = f.get("institution_name", "")
+                attr = attribution_check(org, tool, VENDOR[tool], country, h["url"], h["text"])
+                if attr == "NO":
+                    rejected += 1
+                    stats_extra["attribution_no"] += 1
+                    rej_lines.append({
+                        "batch_id": batch_id, "country": country, "tool": tool,
+                        "institution_name": org,
+                        "org_country": f.get("org_country", ""),
+                        "about_country": f.get("about_country", ""),
+                        "role": f.get("role", ""),
+                        "evidence_kind": f.get("evidence_kind", ""),
+                        "client_or_project": f.get("client_or_project", ""),
+                        "reason": "ATTRIBUTION_NO", "url": h.get("url", ""),
+                    })
+                    continue
+                elif attr == "UNCLEAR":
+                    stats_extra["attribution_unclear"] += 1
+
             names_tool = any(a in quote.lower() for a in ALIASES[tool])
             status = ("confirmed" if f.get("status") == "confirmed"
                       and names_tool else "candidate")
             if cap_candidate:
                 status = "candidate"
+            if variant == "d4" and attr == "UNCLEAR":
+                status = "candidate"
             findings.append((f, h, quote, status, names_tool))
-        log(f"judged {min(i + JUDGE_BATCH, len(hits))}/{len(hits)} hits: "
+        log(f"judged {min(i + JUDGE_BATCH, len(all_hits))}/{len(all_hits)} hits: "
             f"{len(findings)} accepted, {rejected} rejected, {rejected_filter} filtered")
+
     if rej_lines:
         with (ROOT / "data/raw/eval/D_rejections.jsonl").open("a", encoding="utf-8") as fh:
             for r in rej_lines:
@@ -629,6 +894,10 @@ def main():
     for k, (f, h, quote, status, names_tool) in best.items():
         if k in seen:
             continue
+        doc_hit_set = {norm_url(d["url"]) for d in doc_hits[:40]} if variant == "d4" else set()
+        is_doc = norm_url(h["url"]) in doc_hit_set
+        notes_engines = ", ".join(sorted(h.get("engines", {"doc"})))
+        notes_queries = "; ".join(sorted(h.get("queries", [f"study: {h.get('title', '')}"])))[:300]
         row = {
             "batch_id": batch_id,
             "institution_name": f["institution_name"].strip(),
@@ -659,8 +928,9 @@ def main():
             "historical_or_current": "current",
             "notes": (f"Approach D (retrieval pipeline). Quote verified verbatim "
                       f"against retrieved text. "
-                      f"Engines: {', '.join(sorted(h['engines']))}. "
-                      f"Queries: {'; '.join(sorted(h['queries']))[:300]}"),
+                      f"Engines: {notes_engines}. "
+                      f"Queries: {notes_queries}"
+                      f"{' [document-first]' if is_doc else ''}"),
         }
         tmp = Path(f"/tmp/approach_d_{country}_{tool}.json")
         tmp.write_text(json.dumps(row, ensure_ascii=False), encoding="utf-8")
@@ -689,6 +959,8 @@ def main():
         "orgs_written": written,
         "minutes": round((time.time() - t0) / 60, 1),
     }
+    if variant == "d4":
+        stats.update(stats_extra)
     with (ROOT / "data/raw/eval/D_stats.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(stats) + "\n")
     log("stats:", json.dumps(stats))
