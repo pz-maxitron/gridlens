@@ -153,7 +153,7 @@ def _llm_local(prompt, max_tokens, think):
 
 def _llm_hermes(profile, prompt, max_tokens, think):
     """Call hermes CLI for an alternate LLM backend. Returns (out, session_id)."""
-    tmp = Path(f"/tmp/hermes_prompt_{int(time.time() * 1000) % 1000000}.txt")
+    tmp = Path(f"/tmp/hermes_prompt_{os.getpid()}_{time.time_ns()}.txt")
     try:
         tmp.write_text(prompt, encoding="utf-8")
         cmd = ["hermes", "-p", profile, "chat", "--query-file", str(tmp),
@@ -161,12 +161,11 @@ def _llm_hermes(profile, prompt, max_tokens, think):
         result = subprocess.run(cmd, capture_output=True, text=True,
                                 timeout=600, cwd="/tmp")
         stdout = result.stdout
-        session_id = None
-        lines = stdout.splitlines()
-        # Strip trailing session_id: lines, keep the last value seen
-        while lines and lines[-1].startswith("session_id:"):
-            session_id = lines[-1].split(":", 1)[1].strip()
-            lines.pop()
+        # Hermes prints "session_id: ..." on stderr in quiet mode; keep it for cost tracking.
+        sids = re.findall(r"session_id:\s*(\S+)", result.stdout + "\n" + result.stderr)
+        session_id = sids[-1] if sids else None
+        lines = [l for l in stdout.splitlines()
+                 if not l.startswith(("session_id:", "Warning: Unknown toolsets"))]
         out = "\n".join(lines).strip()
         return out, session_id
     finally:
