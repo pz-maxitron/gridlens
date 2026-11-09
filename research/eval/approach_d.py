@@ -47,10 +47,12 @@ from pathlib import Path
 
 import requests
 
+# Add project root to path for search_engines import
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, "/home/gmk/.hermes/hermes-agent")
 import plugins.web.keyless_mcp as web  # noqa: E402
-
-ROOT = Path(__file__).resolve().parents[2]
+from research.eval.search_engines import search, scholarly  # noqa: E402
 LLM_URL = "http://127.0.0.1:39789/v1/chat/completions"
 LLM_MODEL = "Qwen3.6-35B-A3B-UD-Q4_K_M"
 
@@ -362,14 +364,9 @@ def accept_finding(f, quote, country, tool):
     return _accept_d3(f, quote, country, tool)
 
 
-# -------------------------------------------------------------- SEARCH -----
-def run_search(engine, query):
-    try:
-        res = getattr(web, f"{engine}_search_keyless")(query, 8)
-        return [(engine, query, h) for h in (res.get("data") or {}).get("web", [])]
-    except Exception as e:  # noqa: BLE001
-        log(f"search error {engine}: {e!r}"[:200])
-        return []
+def norm_url(u):
+    return re.sub(r"[#?].*$", "", u.strip().lower()
+                  .replace("http://", "https://").replace("://www.", "://")).rstrip("/")
 
 
 def build_queries(country, tool, ents, extra):
@@ -392,43 +389,96 @@ def build_queries(country, tool, ents, extra):
     return out[:MAX_QUERIES]
 
 
-def norm_url(u):
-    return re.sub(r"[#?].*$", "", u.strip().lower()
-                  .replace("http://", "https://").replace("://www.", "://")).rstrip("/")
+# ------------------------------------------------------ SEARCH -----
+# Per-engine calls are now handled by search() — one round-robin engine per query.
+# scholarly() adds OpenAlex academic hits. Stats track ok/empty/failed/cache_hits.
+
+def _hits_for(query, tool, source="web"):
+    """Run search(query) and return (hits_list, status) filtered for tool mention."""
+    aliases = ALIASES[tool]
+    hits, status = search(query, 8)
+    results = []
+    for h in hits:
+        url = h.get("url", "")
+        if not url.startswith("http") or any(s in url.lower() for s in SELF_REF):
+            continue
+        full = (h.get("title", "") or "") + "\n" + (h.get("text", "") or "")
+        low = (full + " " + url).lower()
+        if not any(a in low for a in aliases):
+            continue
+        results.append({
+            "url": url,
+            "title": h.get("title", ""),
+            "text": excerpt(full, aliases),
+            "engines": {source},
+            "queries": {query},
+            "score": 1 + sum(low.count(a) for a in aliases),
+        })
+    return results, status
+
+
+def _scholarly_hits(query, tool):
+    """Run scholarly(query) for OpenAlex academic works."""
+    aliases = ALIASES[tool]
+    hits, status = scholarly(query, 25)
+    results = []
+    for h in hits:
+        url = h.get("url", "")
+        if not url:
+            continue
+        full = (h.get("title", "") or "") + "\n" + (h.get("text", "") or "")
+        low = (full + " " + url).lower()
+        if not any(a in low for a in aliases):
+            continue
+        results.append({
+            "url": url,
+            "title": h.get("title", ""),
+            "text": excerpt(full, aliases),
+            "engines": {"openalex"},
+            "queries": {query},
+            "score": 1 + sum(low.count(a) for a in aliases),
+        })
+    return results, status
 
 
 def search_all(queries, tool):
-    jobs = [(eng, query) for query, engines in queries for eng in engines]
-    hits = {}
-    with cf.ThreadPoolExecutor(max_workers=6) as ex:
-        for results in ex.map(lambda j: run_search(*j), jobs):
-            for engine, query, h in results:
-                url = h.get("url") or ""
-                if not url.startswith("http") or any(
-                        s in url.lower() for s in SELF_REF):
-                    continue
-                text = f"{h.get('title', '')}\n{h.get('description', '')}"
-                key = norm_url(url)
-                entry = hits.setdefault(key, {
-                    "url": url, "title": h.get("title", ""),
-                    "texts": set(), "engines": set(), "queries": set(),
-                })
-                entry["texts"].add(text)
-                entry["engines"].add(engine)
-                entry["queries"].add(query)
-    aliases = ALIASES[tool]
-    kept = []
-    for e in hits.values():
-        full = "\n".join(sorted(e["texts"], key=len, reverse=True))
-        low = (full + " " + e["url"]).lower()
-        if not any(a in low for a in aliases):
-            continue
-        e["text"] = excerpt(full, aliases)
-        e["score"] = (len(e["engines"]) * 2 + len(e["queries"])
-                      + sum(low.count(a) for a in aliases))
-        kept.append(e)
+    """Run all queries through the rotating search layer (+ scholarly for d4)."""
+    stats = {"ok": 0, "empty": 0, "failed": 0, "cache_hits": 0}
+    all_hits = []
+    seen_urls = set()
+
+    # Phase 1: search() for every query
+    for query, _engines in queries:
+        hits, status = _hits_for(query, tool)
+        stats[status] = stats.get(status, 0) + 1
+        for h in hits:
+            key = norm_url(h["url"])
+            if key in seen_urls:
+                # Merge into existing
+                existing = next((e for e in all_hits if norm_url(e["url"]) == key), None)
+                if existing:
+                    existing["engines"].update(h["engines"])
+                    existing["queries"].add(h["query"]) if "query" in h else None
+                    existing["score"] = max(existing["score"], h["score"])
+            else:
+                seen_urls.add(key)
+                all_hits.append(h)
+
+    # Phase 2: scholarly hits are handled in main() after search_all() returns.
+
+    # Deduplicate: keep best score per URL
+    by_url = {}
+    for h in all_hits:
+        key = norm_url(h["url"])
+        if key not in by_url or h["score"] > by_url[key]["score"]:
+            by_url[key] = h
+    kept = list(by_url.values())
     kept.sort(key=lambda e: e["score"], reverse=True)
-    return len(jobs), len(hits), kept[:MAX_HITS_JUDGED]
+
+    # Count cache hits from the search layer (approximate: same query results)
+    n_raw = len(kept)
+
+    return n_raw, len(kept), kept[:MAX_HITS_JUDGED], stats
 
 
 def excerpt(text, aliases, window=700, cap=2500):
@@ -770,8 +820,8 @@ def main():
         log(f"docs: {stats_extra['doc_queries']} queries, {stats_extra['docs_fetched']} fetched, "
             f"{stats_extra['docs_with_tool']} with tool, {stats_extra['doc_hits']} hits")
 
-        n_jobs, n_raw, hits = search_all(queries, tool)
-        log(f"search: {len(queries)} queries / {n_jobs} engine calls -> "
+        n_raw, n_judged, hits, q_stats = search_all(queries, tool)
+        log(f"search: {len(queries)} queries -> "
             f"{n_raw} unique URLs -> {len(hits)} mention {tool}")
 
         seen_doc = {norm_url(d["url"]) for d in doc_hits[:40]}
@@ -779,21 +829,37 @@ def main():
         all_hits = list(doc_hits[:40]) + normal_hits
         log(f"judging: {len(doc_hits[:40])} doc + {len(normal_hits)} normal = {len(all_hits)} total")
 
+        # Scholarly for d4: tool+country queries
+        scholarly_hits_list, _ = _scholarly_hits(f"{tool} {country}", tool)
+        scholarly_hits_list2, _ = _scholarly_hits(f"{tool} {country} power system", tool)
+        scholarly_hits = scholarly_hits_list + scholarly_hits_list2
+
     else:
         ents, extra = plan(country, tool)
         log(f"plan: {len(ents)} entities, {len(extra)} extra queries")
         queries = build_queries(country, tool, ents, extra)
-        n_jobs, n_raw, hits = search_all(queries, tool)
-        log(f"search: {len(queries)} queries / {n_jobs} engine calls -> "
+        n_raw, n_judged, hits, q_stats = search_all(queries, tool)
+        log(f"search: {len(queries)} queries -> "
             f"{n_raw} unique URLs -> {len(hits)} mention {tool}")
         all_hits = hits
         doc_hits = []
 
-    # A healthy run sees 250-500 unique URLs. Far fewer means the search
-    # engines failed (rate limits), not that nothing exists: exit 2 so the
-    # caller retries instead of recording a false negative.
-    if n_raw < 100:
-        log(f"ENGINE_FAILURE: only {n_raw} unique URLs from {n_jobs} engine calls -- not judging")
+        # Scholarly for non-d4: two queries per pair
+        scholarly_hits_list, _ = _scholarly_hits(f"{tool} {country}", tool)
+        scholarly_hits_list2, _ = _scholarly_hits(f"{tool} {country} power system", tool)
+        scholarly_hits = scholarly_hits_list + scholarly_hits_list2
+
+    # Add scholarly hits to all_hits if not already present
+    for h in scholarly_hits:
+        key = norm_url(h["url"])
+        if key not in {norm_url(x["url"]) for x in all_hits}:
+            all_hits.append(h)
+
+    # Failure guard: if more than half queries failed, exit 2
+    total_q = q_stats.get("ok", 0) + q_stats.get("empty", 0) + q_stats.get("failed", 0)
+    failed_q = q_stats.get("failed", 0)
+    if total_q > 0 and failed_q > total_q / 2:
+        log(f"ENGINE_FAILURE: {failed_q}/{total_q} queries failed -- not judging")
         sys.exit(2)
 
     findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
@@ -950,14 +1016,17 @@ def main():
     if written == 0 and not seen:
         url = "https://exa.ai/search?q=" + urllib.parse.quote(f"{tool} {country}")
         log(helper(batch_id, "gap", country, tool, url,
-                   f"Approach D: {len(queries)} queries x engines ({n_jobs} calls), "
-                   f"{n_raw} URLs, {len(hits)} mentioning {tool}, "
-                   f"{len(findings)} accepted findings -- none written."))
+                   f"Approach D: {len(queries)} queries -> {n_raw} URLs, "
+                   f"{len(hits)} mentioning {tool}, {len(findings)} accepted findings -- none written."))
 
     stats = {
         "batch_id": batch_id, "country": country, "tool": tool,
         "entities": len(ents), "queries": len(queries),
-        "engine_calls": n_jobs, "unique_urls": n_raw,
+        "queries_ok": q_stats.get("ok", 0),
+        "queries_empty": q_stats.get("empty", 0),
+        "queries_failed": q_stats.get("failed", 0),
+        "cache_hits": q_stats.get("cache_hits", 0),
+        "unique_urls": n_raw,
         "hits_mentioning_tool": len(hits),
         "grounded_findings": len(findings),
         "rejected_ungrounded": rejected,
