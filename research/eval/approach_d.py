@@ -20,7 +20,9 @@ A fully independent alternative to the agentic per-(country, tool) sessions:
              retrieved text; anything else is rejected as a possible
              hallucination. Confirmed also requires the tool name inside
              the quote itself.
-  6. WRITE   dedupe by normalized organization name, write through
+  6. FILTER2 classify evidence_kind; reject name collisions, data inputs,
+             market coverage, and foreign orgs without a named local client.
+  7. WRITE   dedupe by normalized organization name, write through
              scripts/research_helpers.py (same schema/validation as every
              other method).
 
@@ -84,6 +86,9 @@ TOOLCAT = {"PLEXOS": "planning_expansion", "PyPSA": "energy_system_optimization"
 MAX_QUERIES = 60
 MAX_HITS_JUDGED = 100
 JUDGE_BATCH = 4
+GROUP_SUFFIXES = {"group", "inc", "llc", "ltd", "corp", "corporation", "company", "consulting", "partners"}
+VALID_EVIDENCE_KINDS = {"uses_tool", "commissioned", "develops_tool", "data_input",
+                        "market_coverage", "person_cv", "name_collision", "other"}
 
 
 def log(*a):
@@ -266,6 +271,8 @@ Rules:
 - role one of: {", ".join(ROLES)}
 - "org_country": the country where the organization is based (e.g., "Germany", "France"), or "multinational" for an international company.
 - "about_country": true if the evidence is explicitly about {country}'s energy system or work for a {country} organization, else false.
+- "evidence_kind": one of uses_tool (the organization runs or licenses {tool}), commissioned (it paid for or received a study done with {tool}), develops_tool (it builds/maintains {tool} or a {tool} model), data_input (its data or dataset is only an input to {tool} or a {tool}-based model), market_coverage (a vendor product, dataset or forecast covers its market or system, but it is not shown using {tool}), person_cv (a person's CV, LinkedIn or bio), name_collision (the name resembles {tool} but it is a different thing), other.
+- "client_or_project": the {country} client organization or {country} project named in the quote, copied as written in the quote; "" if none.
 
 Reply with JSON only:
 {{"findings": [{{"hit": 0, "institution_name": "...", "institution_category": "...",
@@ -273,6 +280,7 @@ Reply with JSON only:
 "use_case": "one specific sentence", "evidence_strength": "HIGH|MEDIUM|LOW",
 "source_type": "official_methodology|academic_paper|news_release|tender_procurement|research_finding",
 "org_country": "country name or multinational", "about_country": true,
+"evidence_kind": "...", "client_or_project": "...",
 "why": "one sentence"}}]}}
 Return {{"findings": []}} if no hit qualifies.
 
@@ -303,6 +311,59 @@ def org_key(name):
     n = re.sub(r"[^a-z0-9 ]", " ", n)
     stop = {"the", "of", "and", "gmbh", "ag", "sa", "s", "a", "ltd", "limited", "inc", "co", "company", "plc", "llc"}
     return " ".join(t for t in n.split() if t not in stop)
+
+
+def _norm_institution(name):
+    """Normalize institution name: lowercase, remove punctuation."""
+    n = squash(name)
+    return re.sub(r"[^\w\s]", "", n)
+
+
+def accept_finding(f, quote, country, tool):
+    """Determine whether a post-grounding finding should be accepted.
+
+    Returns (accept: bool, reason: str, cap_candidate: bool).
+    reason is the rejection reason string, empty if accepted.
+    cap_candidate signals that status should be forced to "candidate".
+    """
+    evidence_kind = f.get("evidence_kind", "") or ""
+    client_or_project = (f.get("client_or_project") or "").strip()
+    org_country = (f.get("org_country") or "").strip().lower()
+    role = f.get("role", "")
+    inst_name = f.get("institution_name", "")
+    target = country.strip().lower()
+    tool_aliases = ALIASES.get(tool, [])
+
+    # a) NAME_COLLISION
+    if evidence_kind == "name_collision":
+        return False, "NAME_COLLISION", True
+    norm_inst = _norm_institution(inst_name)
+    for alias in tool_aliases:
+        if norm_inst == alias:
+            return False, "NAME_COLLISION", True
+        # first word is alias + second word is group suffix
+        words = norm_inst.split()
+        if len(words) >= 2 and words[0] == alias and words[1] in GROUP_SUFFIXES:
+            return False, "NAME_COLLISION", True
+
+    # b) DATA_INPUT / MARKET_COVERAGE
+    if evidence_kind in ("data_input", "market_coverage"):
+        return False, evidence_kind, False
+
+    # c) Country filter
+    if org_country == target:
+        accept = True
+    else:
+        # Foreign or multinational: pass only if named local client AND qualifying role
+        if client_or_project and client_or_project.lower() in quote.lower() and role in ("consultant_modeler", "commissioner", "research_user"):
+            accept = True
+        else:
+            return False, "WRONG_COUNTRY", False
+
+    # d) cap_candidate
+    cap_candidate = evidence_kind in ("person_cv", "other") or evidence_kind not in VALID_EVIDENCE_KINDS
+
+    return accept, "", cap_candidate
 
 
 # --------------------------------------------------------------- WRITE -----
@@ -337,7 +398,7 @@ def main():
     n_jobs, n_raw, hits = search_all(queries, tool)
     log(f"search: {len(queries)} queries / {n_jobs} engine calls -> {n_raw} unique URLs -> {len(hits)} mention {tool}")
 
-    findings, rejected, rejected_country = [], 0, 0
+    findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
     rej_lines = []
     for i in range(0, len(hits), JUDGE_BATCH):
         batch = hits[i:i + JUDGE_BATCH]
@@ -349,6 +410,7 @@ def main():
                 rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
                     "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
                     "about_country": f.get("about_country", ""), "role": f.get("role", ""),
+                    "evidence_kind": f.get("evidence_kind", ""), "client_or_project": f.get("client_or_project", ""),
                     "reason": "NOT_VERBATIM", "url": ""})
                 continue
             quote = (f.get("quote") or "").strip()
@@ -357,29 +419,28 @@ def main():
                 rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
                     "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
                     "about_country": f.get("about_country", ""), "role": f.get("role", ""),
+                    "evidence_kind": f.get("evidence_kind", ""), "client_or_project": f.get("client_or_project", ""),
                     "reason": "NOT_VERBATIM", "url": h.get("url", "")})
                 continue
-            # Country filter
-            org_country = (f.get("org_country") or "").strip().lower()
-            about_country = bool(f.get("about_country"))
-            role = f.get("role", "")
-            target = country.strip().lower()
-            accept = False
-            if org_country == target:
-                accept = True
-            elif about_country and role in ("consultant_modeler", "commissioner"):
-                accept = True
+            # Acceptance filter
+            accept, reason, cap_candidate = accept_finding(f, quote, country, tool)
             if not accept:
-                rejected_country += 1
+                if reason == "WRONG_COUNTRY":
+                    rejected_country += 1
+                else:
+                    rejected_filter += 1
                 rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
                     "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
                     "about_country": f.get("about_country", ""), "role": f.get("role", ""),
-                    "reason": "WRONG_COUNTRY", "url": h.get("url", "")})
+                    "evidence_kind": f.get("evidence_kind", ""), "client_or_project": f.get("client_or_project", ""),
+                    "reason": reason, "url": h.get("url", "")})
                 continue
             names_tool = any(a in quote.lower() for a in ALIASES[tool])
             status = "confirmed" if f.get("status") == "confirmed" and names_tool else "candidate"
+            if cap_candidate:
+                status = "candidate"
             findings.append((f, h, quote, status, names_tool))
-        log(f"judged {min(i + JUDGE_BATCH, len(hits))}/{len(hits)} hits: {len(findings)} grounded, {rejected} rejected")
+        log(f"judged {min(i + JUDGE_BATCH, len(hits))}/{len(hits)} hits: {len(findings)} accepted, {rejected} rejected, {rejected_filter} filtered")
     if rej_lines:
         with (ROOT / "data/raw/eval/D_rejections.jsonl").open("a", encoding="utf-8") as fh:
             for r in rej_lines:
@@ -437,12 +498,12 @@ def main():
         url = "https://exa.ai/search?q=" + urllib.parse.quote(f"{tool} {country}")
         log(helper(batch_id, "gap", country, tool, url,
                    f"Approach D: {len(queries)} queries x engines ({n_jobs} calls), {n_raw} URLs, "
-                   f"{len(hits)} mentioning {tool}, {len(findings)} grounded findings -- none written."))
+                   f"{len(hits)} mentioning {tool}, {len(findings)} accepted findings -- none written."))
 
     stats = {"batch_id": batch_id, "country": country, "tool": tool, "entities": len(ents), "queries": len(queries),
              "engine_calls": n_jobs, "unique_urls": n_raw, "hits_mentioning_tool": len(hits),
              "grounded_findings": len(findings), "rejected_ungrounded": rejected,
-             "rejected_wrong_country": rejected_country,
+             "rejected_wrong_country": rejected_country, "rejected_filtered": rejected_filter,
              "orgs_written": written, "minutes": round((time.time() - t0) / 60, 1)}
     with (ROOT / "data/raw/eval/D_stats.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(stats) + "\n")

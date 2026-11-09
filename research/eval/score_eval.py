@@ -73,8 +73,10 @@ def main():
     verdict = {v["id"]: v["verdict"] for v in load(EVAL / "verdicts.jsonl")}
     b, c_add, d = load(EVAL / "EVAL-B.jsonl"), load(EVAL / "EVAL-C.jsonl"), load(EVAL / "EVAL-D.jsonl")
     d2 = load(EVAL / "EVAL-D2.jsonl")
+    d3 = load(EVAL / "EVAL-D3.jsonl")
     variants = {"B (agent, current prompt)": b, "C (B + critique pass)": b + c_add,
-                "D (retrieval pipeline)": d, "D2 (pipeline + country check)": d2}
+                "D (retrieval pipeline)": d, "D2 (pipeline + country check)": d2,
+                "D3 (pipeline + evidence-kind filter)": d3}
 
     timings = list(csv.DictReader(open(ROOT / "research/logs/eval/timings.csv"))) \
         if (ROOT / "research/logs/eval/timings.csv").exists() else []
@@ -88,11 +90,13 @@ def main():
     var_minutes = {"B (agent, current prompt)": minutes["B"],
                    "C (B + critique pass)": minutes["B"] + minutes["C"],
                    "D (retrieval pipeline)": minutes["D"],
-                   "D2 (pipeline + country check)": minutes["D2"]}
+                   "D2 (pipeline + country check)": minutes["D2"],
+                   "D3 (pipeline + evidence-kind filter)": minutes["D3"]}
     var_crash = {"B (agent, current prompt)": crashes["B"],
                  "C (B + critique pass)": crashes["B"] + crashes["C"],
                  "D (retrieval pipeline)": crashes["D"],
-                 "D2 (pipeline + country check)": crashes["D2"]}
+                 "D2 (pipeline + country check)": crashes["D2"],
+                 "D3 (pipeline + evidence-kind filter)": crashes["D3"]}
 
     n_truth = sum(len(v) for v in truth.values())
     lines = ["# Blind search-method evaluation: B vs C vs D", "",
