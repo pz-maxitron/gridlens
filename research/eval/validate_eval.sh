@@ -15,7 +15,7 @@ import json, random
 from pathlib import Path
 done = {json.loads(l)["id"] for l in open("data/raw/eval/verdicts.jsonl") if l.strip()}
 rows = []
-for v in ("EVAL-B", "EVAL-C", "EVAL-D"):
+for v in ("EVAL-B", "EVAL-C", "EVAL-D", "EVAL-D2"):
     p = Path(f"data/raw/eval/{v}.jsonl")
     if p.exists():
         for l in p.read_text(encoding="utf-8").splitlines():

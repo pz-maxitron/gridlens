@@ -72,7 +72,9 @@ def main():
     truth = orgs(truth_rows)
     verdict = {v["id"]: v["verdict"] for v in load(EVAL / "verdicts.jsonl")}
     b, c_add, d = load(EVAL / "EVAL-B.jsonl"), load(EVAL / "EVAL-C.jsonl"), load(EVAL / "EVAL-D.jsonl")
-    variants = {"B (agent, current prompt)": b, "C (B + critique pass)": b + c_add, "D (retrieval pipeline)": d}
+    d2 = load(EVAL / "EVAL-D2.jsonl")
+    variants = {"B (agent, current prompt)": b, "C (B + critique pass)": b + c_add,
+                "D (retrieval pipeline)": d, "D2 (pipeline + country check)": d2}
 
     timings = list(csv.DictReader(open(ROOT / "research/logs/eval/timings.csv"))) \
         if (ROOT / "research/logs/eval/timings.csv").exists() else []
@@ -85,10 +87,12 @@ def main():
             crashes[t["variant"]] += 1
     var_minutes = {"B (agent, current prompt)": minutes["B"],
                    "C (B + critique pass)": minutes["B"] + minutes["C"],
-                   "D (retrieval pipeline)": minutes["D"]}
+                   "D (retrieval pipeline)": minutes["D"],
+                   "D2 (pipeline + country check)": minutes["D2"]}
     var_crash = {"B (agent, current prompt)": crashes["B"],
                  "C (B + critique pass)": crashes["B"] + crashes["C"],
-                 "D (retrieval pipeline)": crashes["D"]}
+                 "D (retrieval pipeline)": crashes["D"],
+                 "D2 (pipeline + country check)": crashes["D2"]}
 
     n_truth = sum(len(v) for v in truth.values())
     lines = ["# Blind search-method evaluation: B vs C vs D", "",
@@ -139,10 +143,11 @@ def main():
               "|---|---|---|---|---|---|"] + detail
     d_stats = load(EVAL / "D_stats.jsonl")
     if d_stats:
-        lines += ["", "## Approach D pipeline stats", "", "| Country | Tool | Queries | Engine calls | URLs | Mention tool | Grounded | Rejected (not verbatim) | Written | Min |",
-                  "|---|---|---|---|---|---|---|---|---|---|"]
+        lines += ["", "## Approach D pipeline stats", "", "| Batch | Country | Tool | Queries | Engine calls | URLs | Mention tool | Grounded | Rejected (not verbatim) | Written | Min |",
+                  "|---|---|---|---|---|---|---|---|---|---|---"]
         for s in d_stats:
-            lines.append(f"| {s['country']} | {s['tool']} | {s['queries']} | {s['engine_calls']} | {s['unique_urls']} | "
+            batch = s.get("batch_id", "EVAL-D")
+            lines.append(f"| {batch} | {s['country']} | {s['tool']} | {s['queries']} | {s['engine_calls']} | "
                          f"{s['hits_mentioning_tool']} | {s['grounded_findings']} | {s['rejected_ungrounded']} | {s['orgs_written']} | {s['minutes']} |")
     text = "\n".join(lines) + "\n"
     (ROOT / "research/eval/RESULTS.md").write_text(text, encoding="utf-8")

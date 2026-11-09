@@ -79,7 +79,7 @@ ROLES = ["direct_user", "commissioner", "consultant_modeler", "research_user", "
 TOOLCAT = {"PLEXOS": "planning_expansion", "PyPSA": "energy_system_optimization",
            "PROMOD": "planning_expansion", "Bid3": "market_simulation"}
 MAX_QUERIES = 60
-MAX_HITS_JUDGED = 40
+MAX_HITS_JUDGED = 100
 JUDGE_BATCH = 4
 
 
@@ -261,12 +261,15 @@ Rules:
 - One hit may name several organizations -- list each separately.
 - institution_category one of: {", ".join(CATEGORIES)}
 - role one of: {", ".join(ROLES)}
+- "org_country": the country where the organization is based (e.g., "Germany", "France"), or "multinational" for an international company.
+- "about_country": true if the evidence is explicitly about {country}'s energy system or work for a {country} organization, else false.
 
 Reply with JSON only:
 {{"findings": [{{"hit": 0, "institution_name": "...", "institution_category": "...",
 "role": "...", "status": "confirmed|candidate", "quote": "...",
 "use_case": "one specific sentence", "evidence_strength": "HIGH|MEDIUM|LOW",
 "source_type": "official_methodology|academic_paper|news_release|tender_procurement|research_finding",
+"org_country": "country name or multinational", "about_country": true,
 "why": "one sentence"}}]}}
 Return {{"findings": []}} if no hit qualifies.
 
@@ -328,7 +331,8 @@ def main():
     n_jobs, n_raw, hits = search_all(queries, tool)
     log(f"search: {len(queries)} queries / {n_jobs} engine calls -> {n_raw} unique URLs -> {len(hits)} mention {tool}")
 
-    findings, rejected = [], 0
+    findings, rejected, rejected_country = [], 0, 0
+    rej_lines = []
     for i in range(0, len(hits), JUDGE_BATCH):
         batch = hits[i:i + JUDGE_BATCH]
         for f in judge(country, tool, batch):
@@ -336,15 +340,44 @@ def main():
                 h = batch[int(f.get("hit", -1))]
             except (ValueError, IndexError, TypeError):
                 rejected += 1
+                rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""), "role": f.get("role", ""),
+                    "reason": "NOT_VERBATIM", "url": ""})
                 continue
             quote = (f.get("quote") or "").strip()
             if not f.get("institution_name") or not grounded(quote, h["text"]):
                 rejected += 1
+                rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""), "role": f.get("role", ""),
+                    "reason": "NOT_VERBATIM", "url": h.get("url", "")})
+                continue
+            # Country filter
+            org_country = (f.get("org_country") or "").strip().lower()
+            about_country = bool(f.get("about_country"))
+            role = f.get("role", "")
+            target = country.strip().lower()
+            accept = False
+            if org_country == target:
+                accept = True
+            elif about_country and role in ("consultant_modeler", "commissioner"):
+                accept = True
+            if not accept:
+                rejected_country += 1
+                rej_lines.append({"batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""), "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""), "role": f.get("role", ""),
+                    "reason": "WRONG_COUNTRY", "url": h.get("url", "")})
                 continue
             names_tool = any(a in quote.lower() for a in ALIASES[tool])
             status = "confirmed" if f.get("status") == "confirmed" and names_tool else "candidate"
             findings.append((f, h, quote, status, names_tool))
         log(f"judged {min(i + JUDGE_BATCH, len(hits))}/{len(hits)} hits: {len(findings)} grounded, {rejected} rejected")
+    if rej_lines:
+        with (ROOT / "data/raw/eval/D_rejections.jsonl").open("a", encoding="utf-8") as fh:
+            for r in rej_lines:
+                fh.write(json.dumps(r) + "\n")
 
     rank = {"confirmed": 2, "candidate": 1}
     best = {}
@@ -400,9 +433,10 @@ def main():
                    f"Approach D: {len(queries)} queries x engines ({n_jobs} calls), {n_raw} URLs, "
                    f"{len(hits)} mentioning {tool}, {len(findings)} grounded findings -- none written."))
 
-    stats = {"country": country, "tool": tool, "entities": len(ents), "queries": len(queries),
+    stats = {"batch_id": batch_id, "country": country, "tool": tool, "entities": len(ents), "queries": len(queries),
              "engine_calls": n_jobs, "unique_urls": n_raw, "hits_mentioning_tool": len(hits),
              "grounded_findings": len(findings), "rejected_ungrounded": rejected,
+             "rejected_wrong_country": rejected_country,
              "orgs_written": written, "minutes": round((time.time() - t0) / 60, 1)}
     with (ROOT / "data/raw/eval/D_stats.jsonl").open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(stats) + "\n")
