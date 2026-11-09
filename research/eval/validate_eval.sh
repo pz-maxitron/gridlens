@@ -10,19 +10,36 @@ OUT=data/raw/eval/verdicts.jsonl
 touch "$OUT"
 mkdir -p research/logs/eval/validator
 
+# If command-line args given, treat them as .jsonl file list (relative to repo root)
+export VALIDATE_FILES=""
+if [ $# -gt 0 ]; then
+  VALIDATE_FILES=$(printf '%s:' "$@" | sed 's/:$//')
+fi
+
 python3 - <<'PYEOF' > /tmp/eval_rows_to_validate.jsonl
-import json, random
+import json, random, os, sys
 from pathlib import Path
 done = {json.loads(l)["id"] for l in open("data/raw/eval/verdicts.jsonl") if l.strip()}
 rows = []
-for v in ("EVAL-B", "EVAL-C", "EVAL-D", "EVAL-D2"):
-    p = Path(f"data/raw/eval/{v}.jsonl")
-    if p.exists():
-        for l in p.read_text(encoding="utf-8").splitlines():
-            if l.strip():
-                r = json.loads(l)
-                if r.get("status") in ("confirmed", "candidate") and r["id"] not in done:
-                    rows.append(r)
+files = os.environ.get("VALIDATE_FILES")
+if files:
+    for fp in files.split(":"):
+        p = Path(fp)
+        if p.exists():
+            for l in p.read_text(encoding="utf-8").splitlines():
+                if l.strip():
+                    r = json.loads(l)
+                    if r.get("status") in ("confirmed", "candidate") and r["id"] not in done:
+                        rows.append(r)
+else:
+    for v in ("EVAL-B", "EVAL-C", "EVAL-D", "EVAL-D2"):
+        p = Path(f"data/raw/eval/{v}.jsonl")
+        if p.exists():
+            for l in p.read_text(encoding="utf-8").splitlines():
+                if l.strip():
+                    r = json.loads(l)
+                    if r.get("status") in ("confirmed", "candidate") and r["id"] not in done:
+                        rows.append(r)
 random.seed(7)
 random.shuffle(rows)
 for r in rows:

@@ -63,12 +63,14 @@ ALIASES = {
     "PyPSA": ["pypsa"],
     "PROMOD": ["promod"],
     "Bid3": ["bid3", "bid 3"],
+    "SDDP": ["sddp"],
 }
 VENDOR = {
     "PLEXOS": "Energy Exemplar",
     "PyPSA": "open-source, TU Berlin / KIT / Open Energy Transition",
     "PROMOD": "Hitachi Energy, formerly ABB",
     "Bid3": "Aurora Energy Research",
+    "SDDP": "PSR",
 }
 SELF_REF = ("gridlens.org", "esm-usage-catalog", "open-energy-transition/gridlens", "pz-maxitron/gridlens")
 CATEGORIES = ["utility_iso_rto", "utility_tso", "utility_generation", "utility_distribution",
@@ -77,7 +79,8 @@ CATEGORIES = ["utility_iso_rto", "utility_tso", "utility_generation", "utility_d
               "ngo_foundation", "energy_company_diversified", "project_developer", "other"]
 ROLES = ["direct_user", "commissioner", "consultant_modeler", "research_user", "subject_of_study", "qa_reviewer"]
 TOOLCAT = {"PLEXOS": "planning_expansion", "PyPSA": "energy_system_optimization",
-           "PROMOD": "planning_expansion", "Bid3": "market_simulation"}
+           "PROMOD": "planning_expansion", "Bid3": "market_simulation",
+           "SDDP": "planning_expansion"}
 MAX_QUERIES = 60
 MAX_HITS_JUDGED = 100
 JUDGE_BATCH = 4
@@ -304,7 +307,10 @@ def org_key(name):
 
 # --------------------------------------------------------------- WRITE -----
 def existing_keys(batch_id, country, tool):
-    path = ROOT / f"data/raw/eval/{batch_id}.jsonl"
+    if batch_id.startswith("EVAL-"):
+        path = ROOT / f"data/raw/eval/{batch_id}.jsonl"
+    else:
+        path = ROOT / f"data/raw/incoming/{batch_id}.jsonl"
     keys = set()
     if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
