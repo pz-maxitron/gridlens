@@ -6,9 +6,17 @@
 # that already have a verdict are skipped.
 set -u
 cd ~/code/plexos-catalogue-web || exit 1
-OUT=data/raw/eval/verdicts.jsonl
-touch "$OUT"
-mkdir -p research/logs/eval/validator
+
+VALIDATOR_PROFILE="${VALIDATOR_PROFILE:-validator}"
+VERDICTS="${VERDICTS:-data/raw/eval/verdicts.jsonl}"
+LOG_DIR="research/logs/eval/validator/${VALIDATOR_PROFILE}"
+mkdir -p "$LOG_DIR"
+
+# Unique temp file, removed at exit
+TMPROWS=$(mktemp)
+trap 'rm -f "$TMPROWS"' EXIT
+
+touch "$VERDICTS"
 
 # If command-line args given, treat them as .jsonl file list (relative to repo root)
 export VALIDATE_FILES=""
@@ -16,7 +24,7 @@ if [ $# -gt 0 ]; then
   VALIDATE_FILES=$(printf '%s:' "$@" | sed 's/:$//')
 fi
 
-python3 - <<'PYEOF' > /tmp/eval_rows_to_validate.jsonl
+python3 - <<'PYEOF'
 import json, random, os, sys
 from pathlib import Path
 done = {json.loads(l)["id"] for l in open("data/raw/eval/verdicts.jsonl") if l.strip()}
@@ -42,11 +50,12 @@ else:
                         rows.append(r)
 random.seed(7)
 random.shuffle(rows)
-for r in rows:
-    print(json.dumps(r, ensure_ascii=False))
+with open(os.environ["TMPROWS"], "w", encoding="utf-8") as f:
+    for r in rows:
+        f.write(json.dumps(r, ensure_ascii=False) + "\n")
 PYEOF
 
-echo "=== validating $(wc -l < /tmp/eval_rows_to_validate.jsonl) rows at $(date) ==="
+echo "=== validating $(wc -l < "$TMPROWS") rows at $(date) ==="
 while IFS= read -r ROW; do
   ID=$(echo "$ROW" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
   CLEAN=$(echo "$ROW" | python3 -c '
@@ -71,11 +80,11 @@ VERDICT: WRONG_ORGANIZATION
 
 Record:
 $CLEAN"
-  LOG="research/logs/eval/validator/${ID}.log"
-  timeout 15m hermes -p validator chat -q "$PROMPT" > "$LOG" 2>&1
+  LOG="${LOG_DIR}/${ID}.log"
+  timeout 15m hermes -p "$VALIDATOR_PROFILE" chat -q "$PROMPT" > "$LOG" 2>&1
   V=$(grep -oE "VERDICT: *(VERIFIED|QUOTE_NOT_FOUND|URL_UNREACHABLE|WEAK_EVIDENCE|WRONG_ORGANIZATION)" "$LOG" | tail -1 | sed 's/VERDICT: *//')
   [ -z "$V" ] && V="NO_VERDICT"
-  python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"verdict":sys.argv[2]}))' "$ID" "$V" >> "$OUT"
+  python3 -c 'import json,sys; print(json.dumps({"id":sys.argv[1],"verdict":sys.argv[2]}))' "$ID" "$V" >> "$VERDICTS"
   echo "$ID -> $V"
-done < /tmp/eval_rows_to_validate.jsonl
+done < "$TMPROWS"
 echo "=== validation done at $(date) ==="
