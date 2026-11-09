@@ -8,7 +8,7 @@ set -u
 cd ~/code/plexos-catalogue-web || exit 1
 
 VALIDATOR_PROFILE="${VALIDATOR_PROFILE:-validator}"
-VERDICTS="${VERDICTS:-data/raw/eval/verdicts.jsonl}"
+export VERDICTS="${VERDICTS:-data/raw/eval/verdicts.jsonl}"
 LOG_DIR="research/logs/eval/validator/${VALIDATOR_PROFILE}"
 mkdir -p "$LOG_DIR"
 
@@ -27,7 +27,7 @@ fi
 python3 - <<'PYEOF'
 import json, random, os, sys
 from pathlib import Path
-done = {json.loads(l)["id"] for l in open("data/raw/eval/verdicts.jsonl") if l.strip()}
+done = {json.loads(l)["id"] for l in open(os.environ["VERDICTS"]) if l.strip()}
 rows = []
 files = os.environ.get("VALIDATE_FILES")
 if files:
