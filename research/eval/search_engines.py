@@ -132,7 +132,12 @@ def _searxng_fn(q, l):
     import requests
     r = requests.get(f"{_SEARXNG_URL}/search", params={"q": q, "format": "json"}, timeout=10)
     r.raise_for_status()
-    results = r.json().get("results", [])
+    body = r.json()
+    results = body.get("results", [])
+    unresponsive = body.get("unresponsive_engines", [])
+    if not results and unresponsive:
+        names = [f'"{u[0]}": {u[1]}' for u in unresponsive[:5]]
+        raise RuntimeError(f"searxng upstreams unavailable: {', '.join(names)}")
     return [{"url": x.get("url", ""), "title": x.get("title", ""),
              "text": x.get("content", x.get("snippet", ""))} for x in results[:l]]
 
@@ -146,37 +151,63 @@ def search(query, limit=10):
     start = _rr[0]
     _rr[0] = (start + 1) % len(active)
 
-    for i in range(len(active)):
-        engine = active[(start + i) % len(active)]
-        if not _engine_ok(engine):
+    for attempt in range(2):  # initial pass + one cooldown retry
+        empty_answers = []
+        engines_that_answered = set()
+
+        for i in range(len(active)):
+            engine = active[(start + i) % len(active)]
+            if not _engine_ok(engine):
+                continue
+            _throttle(engine)
+            t0 = time.monotonic()
+            try:
+                res = _call_keyless(_FNS[engine], query, limit)
+            except Exception:
+                _engine_fail(engine)
+                _log(engine, query, "failed", 0, time.monotonic() - t0)
+                continue
+
+            engines_that_answered.add(engine)
+            hits = _norm(res, limit)
+            err = res.get("error", "") if isinstance(res, dict) else ""
+            failed = (not hits) and (err and _is_fail_msg(err))
+
+            if failed:
+                _engine_fail(engine)
+                _log(engine, query, "failed", 0, time.monotonic() - t0)
+                continue
+
+            _engine_okay(engine)
+            status = "ok" if hits else "empty"
+            k = _ckey(query, limit)
+            if status == "ok":
+                _cache_put(k, hits)
+            _log(engine, query, status, len(hits), time.monotonic() - t0)
+
+            if hits:
+                return hits, "ok"
+            empty_answers.append(engine)
+
+        # End of pass
+        if len(empty_answers) >= 2:
+            return [], "empty"
+        if engines_that_answered:
+            # Exactly one engine answered with empty — accept it
+            return [], "empty"
+
+        # No engine was available in this pass (all on cooldown)
+        if attempt == 0:
+            # Wait for earliest cooldown (cap 300s)
+            with _locks["cd"]:
+                remaining = {e: d for e, d in _cooldowns.items()
+                             if e in active and d > time.monotonic()}
+            if remaining:
+                wait = min(remaining.values()) - time.monotonic()
+                time.sleep(min(max(wait, 0), 300))
             continue
-        _throttle(engine)
-        t0 = time.monotonic()
-        try:
-            res = _call_keyless(_FNS[engine], query, limit)
-        except Exception:
-            _engine_fail(engine)
-            _log(engine, query, "failed", 0, time.monotonic() - t0)
-            continue
 
-        hits = _norm(res, limit)
-        err = res.get("error", "") if isinstance(res, dict) else ""
-        failed = (not hits) and (err and _is_fail_msg(err))
-
-        if failed:
-            _engine_fail(engine)
-            _log(engine, query, "failed", 0, time.monotonic() - t0)
-            continue
-
-        _engine_okay(engine)
-        status = "ok" if hits else "empty"
-        k = _ckey(query, limit)
-        if status == "ok":
-            _cache_put(k, hits)
-        _log(engine, query, status, len(hits), time.monotonic() - t0)
-        return hits, status
-
-    return [], "failed"
+        return [], "failed"
 
 # ── PUBLIC: scholarly() ───────────────────────────────────────────────────
 def scholarly(query, limit=25):
