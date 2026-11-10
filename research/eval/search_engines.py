@@ -123,7 +123,7 @@ _SEARXNG_URL = os.environ.get("GRIDLENS_SEARXNG_URL") or "http://127.0.0.1:8888"
 _SEARXNG_HEALTHY = False
 try:
     import requests as _req
-    _r = _req.get(f"{_SEARXNG_URL}/search", params={"q": "test", "format": "json"}, timeout=2)
+    _r = _req.get(f"{_SEARXNG_URL}/healthz", timeout=3)  # a real search can take >2 s
     _SEARXNG_HEALTHY = _r.status_code == 200
 except Exception:
     pass

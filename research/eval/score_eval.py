@@ -160,7 +160,7 @@ def main():
         "C (B + critique pass)": b + c_add,
         "D (retrieval pipeline)": d,
         "D2 (pipeline + country check)": d2,
-        "D2 with free engine stack": d2,
+        "D2 with free engine stack": load(EVAL / "EVAL-D2F.jsonl"),
         "D3 (pipeline + evidence-kind filter)": d3,
         d4_name: d4,
         "D2 on Opus 5.5": o2,
@@ -275,7 +275,7 @@ def main():
                   "|---|---|---|---|---|---|---|---|---|---|---"]
         for s in d_stats:
             batch = s.get("batch_id", "EVAL-D")
-            lines.append(f"| {batch} | {s['country']} | {s['tool']} | {s['queries']} | {s['engine_calls']} | "
+            lines.append(f"| {batch} | {s['country']} | {s['tool']} | {s.get('queries', '-')} | {s.get('engine_calls', s.get('queries_ok', '-'))} | "
                          f"{s['hits_mentioning_tool']} | {s['grounded_findings']} | {s['rejected_ungrounded']} | "
                          f"{s['orgs_written']} | {s['minutes']} |")
 
