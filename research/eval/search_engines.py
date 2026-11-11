@@ -1,15 +1,19 @@
 """Throttled, rotating, cached multi-engine search layer (~250 lines)."""
-import hashlib, json, os, re, sqlite3, sys, threading, time, urllib.parse, urllib.request
+import hashlib, json, os, re, sqlite3, sys, threading, time, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
 # ── Config ──────────────────────────────────────────────────────────────────
 ENGINES = ["parallel", "keenable", "exa", "ddgs", "searxng"]
-THROTTLE = {"parallel": 0.5, "keenable": 1.0, "exa": 2.0, "ddgs": 2.0, "searxng": 1.0, "openalex": 0.2}
+THROTTLE = {"parallel": 0.5, "keenable": 1.0, "exa": 2.0, "ddgs": 2.0, "searxng": 1.0, "openalex": 1.0}
 CACHE_PATH = Path.home() / ".cache/gridlens-search-cache.sqlite"
 CACHE_TTL = 30 * 86400
 LOG_PATH = Path("data/raw/eval/engine_log.jsonl")
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Polite pool ─────────────────────────────────────────────────────────────
+_OPENALEX_MAILTO = os.environ.get("OPENALEX_MAILTO")
+_OPENALEX_UA = f"gridlens-research (mailto:{_OPENALEX_MAILTO})" if _OPENALEX_MAILTO else "gridlens-research"
 
 # ── State (module-level) ───────────────────────────────────────────────────
 _rr = [0]  # round-robin cursor
@@ -220,33 +224,95 @@ def scholarly(query, limit=25):
 
     _throttle("openalex")
     t0 = time.monotonic()
-    try:
-        url = f"https://api.openalex.org/works?search={urllib.parse.quote(query)}&per-page={limit}"
-        with urllib.request.urlopen(urllib.request.Request(url, headers={"Accept": "application/json"}), timeout=30) as resp:
-            data = json.loads(resp.read().decode())
 
-        results = []
-        for w in data.get("results", []):
-            inv = w.get("abstract_inverted_index") or {}
-            abstract = ""
-            if inv:
-                words = []
-                for word, positions in inv.items():
-                    for pos in positions:
-                        while len(words) <= pos:
-                            words.append("")
-                        words[pos] = word
-                abstract = " ".join(words)
-            results.append({"url": w.get("doi") or w.get("id", ""),
-                            "title": w.get("display_name", ""),
-                            "text": (w.get("display_name", "") + "\n" + abstract)[:2000]})
-        status = "ok" if results else "empty"
-        _engine_okay("openalex")
-        if status == "ok":
-            _cache_put(k, results)
-        _log("openalex", query, status, len(results), time.monotonic() - t0)
-        return results, status
-    except Exception:
-        _engine_fail("openalex")
-        _log("openalex", query, "failed", 0, time.monotonic() - t0)
-        return [], "failed"
+    # Build URL with optional mailto polite-pool parameter
+    params = urllib.parse.urlencode({"search": query, "per-page": limit})
+    url = f"https://api.openalex.org/works?{params}"
+
+    for attempt in range(1, 4):  # up to 3 attempts
+        t_req = time.monotonic()
+        try:
+            req = urllib.request.Request(url, headers={
+                "Accept": "application/json",
+                "User-Agent": _OPENALEX_UA,
+            })
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                status_code = resp.status
+                # Honour Retry-After header on 429/503
+                if status_code in (429, 503) and attempt < 3:
+                    retry_after = resp.headers.get("Retry-After")
+                    wait = 10  # default
+                    if retry_after:
+                        try:
+                            wait = min(float(retry_after), 60)  # cap at 60 s
+                        except (ValueError, TypeError):
+                            pass
+                    elapsed = time.monotonic() - t_req
+                    _log("openalex", query, "retry", 0, round(elapsed, 2))
+                    time.sleep(max(0, wait - elapsed))
+                    if attempt < 3:
+                        continue  # retry
+                    else:
+                        # last attempt got 429/503, fall through to failure handling
+                        _engine_fail("openalex")
+                        _log("openalex", query, "failed", 0, time.monotonic() - t0)
+                        return [], "failed"
+
+                if status_code == 200:
+                    data = json.loads(resp.read().decode())
+
+                    results = []
+                    for w in data.get("results", []):
+                        inv = w.get("abstract_inverted_index") or {}
+                        abstract = ""
+                        if inv:
+                            words = []
+                            for word, positions in inv.items():
+                                for pos in positions:
+                                    while len(words) <= pos:
+                                        words.append("")
+                                    words[pos] = word
+                            abstract = " ".join(words)
+                        results.append({"url": w.get("doi") or w.get("id", ""),
+                                        "title": w.get("display_name", ""),
+                                        "text": (w.get("display_name", "") + "\n" + abstract)[:2000]})
+                    status = "ok" if results else "empty"
+                    _engine_okay("openalex")
+                    if status == "ok":
+                        _cache_put(k, results)
+                    _log("openalex", query, status, len(results), time.monotonic() - t0)
+                    return results, status
+                else:
+                    # Non-429/503 error (e.g. 500)
+                    _engine_fail("openalex")
+                    _log("openalex", query, "failed", 0, time.monotonic() - t0)
+                    return [], "failed"
+
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503) and attempt < 3:
+                retry_after = e.headers.get("Retry-After")
+                wait = 10
+                if retry_after:
+                    try:
+                        wait = min(float(retry_after), 60)
+                    except (ValueError, TypeError):
+                        pass
+                elapsed = time.monotonic() - t_req
+                _log("openalex", query, "retry", 0, round(elapsed, 2))
+                time.sleep(max(0, wait - elapsed))
+                continue
+            # Non-retriable HTTP error
+            _engine_fail("openalex")
+            _log("openalex", query, "failed", 0, time.monotonic() - t0)
+            return [], "failed"
+
+        except Exception:
+            # Non-HTTP error (timeout, etc.) — treat as failure immediately
+            _engine_fail("openalex")
+            _log("openalex", query, "failed", 0, time.monotonic() - t0)
+            return [], "failed"
+
+    # Should not reach here, but just in case
+    _engine_fail("openalex")
+    _log("openalex", query, "failed", 0, time.monotonic() - t0)
+    return [], "failed"
