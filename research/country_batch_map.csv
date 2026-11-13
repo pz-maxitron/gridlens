@@ -84,7 +84,7 @@ Lithuania,Baltics,MTS1-B
 Nigeria,West Africa,MTS1-C
 Ghana,West Africa,MTS1-C
 Senegal,West Africa,MTS1-C
-Ivory Coast,West Africa,MTS1-C
+Cote d'Ivoire,West Africa,MTS1-C
 Mali,West Africa,MTS1-C
 Guinea,West Africa,MTS1-C
 Benin,West Africa,MTS1-C
@@ -100,8 +100,8 @@ Mauritania,West Africa,MTS1-C
 Cameroon,Central Africa,MTS1-C
 Central African Republic,Central Africa,MTS1-C
 Chad,Central Africa,MTS1-C
-Congo (Republic of the),Central Africa,MTS1-C
-Democratic Republic of the Congo,Central Africa,MTS1-C
+Republic of the Congo,Central Africa,MTS1-C
+Democratic Republic of Congo,Central Africa,MTS1-C
 Equatorial Guinea,Central Africa,MTS1-C
 Gabon,Central Africa,MTS1-C
 Sao Tome and Principe,Central Africa,MTS1-C
@@ -135,7 +135,6 @@ Malawi,Southern Africa,MTS1-D
 Lesotho,Southern Africa,MTS1-D
 Eswatini,Southern Africa,MTS1-D
 Angola,Southern Africa,MTS1-D
-DRC,Southern Africa,MTS1-D
 Saudi Arabia,Middle East,MTS1-E
 United Arab Emirates,Middle East,MTS1-E
 Qatar,Middle East,MTS1-E
