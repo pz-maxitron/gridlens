@@ -1,5 +1,23 @@
 [
   {
+    "date": "13 Nov 2026",
+    "tag": "coverage",
+    "title": "Europe searched across five modelling tools",
+    "description": "Europe grew from 129 to 507 rows and from 32 to 40 countries; confirmed rows rose from 129 to 360 (PLEXOS 179, SDDP 30, PyPSA 95, PROMOD 2, Bid3 35, plus 19 for other tools), and confirmed rows with a verbatim quote from 34 to 348."
+  },
+  {
+    "date": "10 Nov 2026",
+    "tag": "coverage",
+    "title": "Latin America and the Caribbean searched across five modelling tools",
+    "description": "Latin America and the Caribbean grew from 40 to 213 rows and from 15 to 30 countries; confirmed rows rose from 40 to 132 (PLEXOS 52, SDDP 58, PyPSA 11, PROMOD 5, plus 6 for Brazil's NEWAVE/DECOMP/DESSEM tool chain), and confirmed rows with a verbatim quote from 6 to 120."
+  },
+  {
+    "date": "9 Nov 2026",
+    "tag": "coverage",
+    "title": "North America re-searched across five modelling tools",
+    "description": "Expanded North America (US, Canada, Mexico) from 85 rows using only PLEXOS and PyPSA to 182 rows across 5 tools (PLEXOS 108, PyPSA 21, PROMOD 27, Bid3 5, SDDP 21); confirmed rows rose from 68 to 119, confirmed rows with quotes from 23 to 97. Countries: US 70→112, Canada 10→49, Mexico 5→21. 27 wrong-organization rows excluded, 9 legacy duplicates merged."
+  },
+  {
     "date": "7 Nov 2026",
     "tag": "added",
     "title": "UPME (Colombia) confirmed as a PLEXOS direct user",
