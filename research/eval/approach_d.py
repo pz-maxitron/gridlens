@@ -1001,9 +1001,12 @@ def main():
             for fut in cf.as_completed(futures):
                 idx, batch_findings = fut.result()
                 judge_results[idx] = batch_findings
-        # Process in original batch order so output/IDs match sequential run
+        # Process in original batch order so output/IDs match sequential run.
+        # judge_results is keyed by each batch's starting hit offset (0, 4, 8, ...),
+        # not by its position in judge_tasks.
+        task_by_offset = {t[0]: t for t in judge_tasks}
         for idx in sorted(judge_results):
-            batch_idx, _, _, batch = judge_tasks[idx]
+            batch_idx, _, _, batch = task_by_offset[idx]
             _process_findings(batch, judge_results[idx], country, tool, variant,
                               batch_id, stats_extra)
             log(f"judged {min(batch_idx + JUDGE_BATCH, len(all_hits))}/{len(all_hits)} hits: "
