@@ -33,7 +33,6 @@ backends):
 Environment:
   D_VARIANT:   "d2" (b17afdc prompt + acceptance), "d3" (current, default), or "d4" (three-perspective plan, document-first, attribution).
   LLM_BACKEND: "local" (default, gateway) or "hermes:<profile>".
-  JUDGE_CONCURRENCY: number of concurrent judge calls (default 2; 1 = sequential).
 """
 import concurrent.futures as cf
 import json
@@ -283,12 +282,6 @@ Reply with JSON only:
 Return {{"findings": []}} if no hit qualifies.
 
 {blocks}"""
-
-
-def _judge_one(args):
-    """Call judge() and return (batch_index, findings) for ordered merge."""
-    batch_index, country, tool, batch = args
-    return batch_index, judge(country, tool, batch)
 
 
 def judge(country, tool, batch):
@@ -825,95 +818,6 @@ def helper(*args):
     return (p.stdout + p.stderr).strip()
 
 
-def _process_findings(batch, findings_for_batch, country, tool, variant,
-                      batch_id, stats_extra):
-    """Process all findings from one judge batch (called in original batch order)."""
-    for f in findings_for_batch:
-        _process_single_finding(f, batch, country, tool, variant, batch_id,
-                                stats_extra)
-
-
-def _process_single_finding(f, batch, country, tool, variant, batch_id, stats_extra):
-    """Process a single finding from a judge batch."""
-    try:
-        h = batch[int(f.get("hit", -1))]
-    except (ValueError, IndexError, TypeError):
-        _rejected_count[0] += 1
-        rej_lines.append({
-            "batch_id": batch_id, "country": country, "tool": tool,
-            "institution_name": f.get("institution_name", ""),
-            "org_country": f.get("org_country", ""),
-            "about_country": f.get("about_country", ""),
-            "role": f.get("role", ""),
-            "evidence_kind": f.get("evidence_kind", ""),
-            "client_or_project": f.get("client_or_project", ""),
-            "reason": "NOT_VERBATIM", "url": "",
-        })
-        return
-
-    quote = (f.get("quote") or "").strip()
-    if not f.get("institution_name") or not grounded(quote, h["text"]):
-        _rejected_count[0] += 1
-        rej_lines.append({
-            "batch_id": batch_id, "country": country, "tool": tool,
-            "institution_name": f.get("institution_name", ""),
-            "org_country": f.get("org_country", ""),
-            "about_country": f.get("about_country", ""),
-            "role": f.get("role", ""),
-            "evidence_kind": f.get("evidence_kind", ""),
-            "client_or_project": f.get("client_or_project", ""),
-            "reason": "NOT_VERBATIM", "url": h.get("url", ""),
-        })
-        return
-    accept, reason, cap_candidate = accept_finding(f, quote, country, tool)
-    if not accept:
-        if reason == "WRONG_COUNTRY":
-            rejected_country[0] += 1
-        else:
-            rejected_filter[0] += 1
-        rej_lines.append({
-            "batch_id": batch_id, "country": country, "tool": tool,
-            "institution_name": f.get("institution_name", ""),
-            "org_country": f.get("org_country", ""),
-            "about_country": f.get("about_country", ""),
-            "role": f.get("role", ""),
-            "evidence_kind": f.get("evidence_kind", ""),
-            "client_or_project": f.get("client_or_project", ""),
-            "reason": reason, "url": h.get("url", ""),
-        })
-        return
-
-    attr = "YES"
-    if variant == "d4":
-        org = f.get("institution_name", "")
-        attr = attribution_check(org, tool, VENDOR[tool], country, h["url"], h["text"])
-        if attr == "NO":
-            _rejected_count[0] += 1
-            stats_extra["attribution_no"] += 1
-            rej_lines.append({
-                "batch_id": batch_id, "country": country, "tool": tool,
-                "institution_name": org,
-                "org_country": f.get("org_country", ""),
-                "about_country": f.get("about_country", ""),
-                "role": f.get("role", ""),
-                "evidence_kind": f.get("evidence_kind", ""),
-                "client_or_project": f.get("client_or_project", ""),
-                "reason": "ATTRIBUTION_NO", "url": h.get("url", ""),
-            })
-            return
-        elif attr == "UNCLEAR":
-            stats_extra["attribution_unclear"] += 1
-
-    names_tool = any(a in quote.lower() for a in ALIASES[tool])
-    status = ("confirmed" if f.get("status") == "confirmed"
-              and names_tool else "candidate")
-    if cap_candidate:
-        status = "candidate"
-    if variant == "d4" and attr == "UNCLEAR":
-        status = "candidate"
-    findings.append((f, h, quote, status, names_tool))
-
-
 def main():
     batch_id, country, tool = sys.argv[1], sys.argv[2], sys.argv[3]
     CUR["batch_id"] = batch_id
@@ -980,48 +884,90 @@ def main():
         log(f"ENGINE_FAILURE: {failed_q}/{total_q} queries failed -- not judging")
         sys.exit(2)
 
-    # Mutable counters shared with helpers
-    findings = []
-    _rejected_count = [0]
-    rejected_country = [0]
-    rejected_filter = [0]
+    findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
     rej_lines = []
 
-    # Build judge tasks: (batch_index, country, tool, batch)
-    judge_tasks = []
     for i in range(0, len(all_hits), JUDGE_BATCH):
-        judge_tasks.append((i, country, tool, all_hits[i:i + JUDGE_BATCH]))
+        batch = all_hits[i:i + JUDGE_BATCH]
+        for f in judge(country, tool, batch):
+            try:
+                h = batch[int(f.get("hit", -1))]
+            except (ValueError, IndexError, TypeError):
+                rejected += 1
+                rej_lines.append({
+                    "batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""),
+                    "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""),
+                    "role": f.get("role", ""),
+                    "evidence_kind": f.get("evidence_kind", ""),
+                    "client_or_project": f.get("client_or_project", ""),
+                    "reason": "NOT_VERBATIM", "url": "",
+                })
+                continue
+            quote = (f.get("quote") or "").strip()
+            if not f.get("institution_name") or not grounded(quote, h["text"]):
+                rejected += 1
+                rej_lines.append({
+                    "batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""),
+                    "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""),
+                    "role": f.get("role", ""),
+                    "evidence_kind": f.get("evidence_kind", ""),
+                    "client_or_project": f.get("client_or_project", ""),
+                    "reason": "NOT_VERBATIM", "url": h.get("url", ""),
+                })
+                continue
+            accept, reason, cap_candidate = accept_finding(f, quote, country, tool)
+            if not accept:
+                if reason == "WRONG_COUNTRY":
+                    rejected_country += 1
+                else:
+                    rejected_filter += 1
+                rej_lines.append({
+                    "batch_id": batch_id, "country": country, "tool": tool,
+                    "institution_name": f.get("institution_name", ""),
+                    "org_country": f.get("org_country", ""),
+                    "about_country": f.get("about_country", ""),
+                    "role": f.get("role", ""),
+                    "evidence_kind": f.get("evidence_kind", ""),
+                    "client_or_project": f.get("client_or_project", ""),
+                    "reason": reason, "url": h.get("url", ""),
+                })
+                continue
 
-    # Run judge batches concurrently
-    concurrency = int(os.environ.get("JUDGE_CONCURRENCY", "2"))
-    if concurrency > 1:
-        judge_results = {}
-        with cf.ThreadPoolExecutor(max_workers=concurrency) as pool:
-            futures = {pool.submit(_judge_one, args): args[0] for args in judge_tasks}
-            for fut in cf.as_completed(futures):
-                idx, batch_findings = fut.result()
-                judge_results[idx] = batch_findings
-        # Process in original batch order so output/IDs match sequential run.
-        # judge_results is keyed by each batch's starting hit offset (0, 4, 8, ...),
-        # not by its position in judge_tasks.
-        task_by_offset = {t[0]: t for t in judge_tasks}
-        for idx in sorted(judge_results):
-            batch_idx, _, _, batch = task_by_offset[idx]
-            _process_findings(batch, judge_results[idx], country, tool, variant,
-                              batch_id, stats_extra)
-            log(f"judged {min(batch_idx + JUDGE_BATCH, len(all_hits))}/{len(all_hits)} hits: "
-                f"{len(findings)} accepted, {_rejected_count[0]} rejected, "
-                f"{rejected_filter[0]} filtered")
-    else:
-        # Sequential (concurrency=1): original behaviour
-        for i in range(0, len(all_hits), JUDGE_BATCH):
-            batch = all_hits[i:i + JUDGE_BATCH]
-            for f in judge(country, tool, batch):
-                _process_single_finding(f, batch, country, tool, variant,
-                                        batch_id, stats_extra)
-            log(f"judged {min(i + JUDGE_BATCH, len(all_hits))}/{len(all_hits)} hits: "
-                f"{len(findings)} accepted, {_rejected_count[0]} rejected, "
-                f"{rejected_filter[0]} filtered")
+            attr = "YES"
+            if variant == "d4":
+                org = f.get("institution_name", "")
+                attr = attribution_check(org, tool, VENDOR[tool], country, h["url"], h["text"])
+                if attr == "NO":
+                    rejected += 1
+                    stats_extra["attribution_no"] += 1
+                    rej_lines.append({
+                        "batch_id": batch_id, "country": country, "tool": tool,
+                        "institution_name": org,
+                        "org_country": f.get("org_country", ""),
+                        "about_country": f.get("about_country", ""),
+                        "role": f.get("role", ""),
+                        "evidence_kind": f.get("evidence_kind", ""),
+                        "client_or_project": f.get("client_or_project", ""),
+                        "reason": "ATTRIBUTION_NO", "url": h.get("url", ""),
+                    })
+                    continue
+                elif attr == "UNCLEAR":
+                    stats_extra["attribution_unclear"] += 1
+
+            names_tool = any(a in quote.lower() for a in ALIASES[tool])
+            status = ("confirmed" if f.get("status") == "confirmed"
+                      and names_tool else "candidate")
+            if cap_candidate:
+                status = "candidate"
+            if variant == "d4" and attr == "UNCLEAR":
+                status = "candidate"
+            findings.append((f, h, quote, status, names_tool))
+        log(f"judged {min(i + JUDGE_BATCH, len(all_hits))}/{len(all_hits)} hits: "
+            f"{len(findings)} accepted, {rejected} rejected, {rejected_filter} filtered")
 
     if rej_lines:
         with (ROOT / "data/raw/eval/D_rejections.jsonl").open("a", encoding="utf-8") as fh:
@@ -1105,9 +1051,9 @@ def main():
         "unique_urls": n_raw,
         "hits_mentioning_tool": len(hits),
         "grounded_findings": len(findings),
-        "rejected_ungrounded": _rejected_count[0],
-        "rejected_wrong_country": rejected_country[0],
-        "rejected_filtered": rejected_filter[0],
+        "rejected_ungrounded": rejected,
+        "rejected_wrong_country": rejected_country,
+        "rejected_filtered": rejected_filter,
         "orgs_written": written,
         "minutes": round((time.time() - t0) / 60, 1),
     }
