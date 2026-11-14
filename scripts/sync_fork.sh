@@ -37,6 +37,10 @@ fi
 
 cd "$SYNC_DIR" || { echo "WARNING: could not create/access sync mirror at $SYNC_DIR"; exit 1; }
 
+# Repo-local git identity (never --global) so merges can commit.
+git config user.name "pz-maxitron"
+git config user.email "pz-maxitron@users.noreply.github.com"
+
 SUMMARY=""
 WARNED=0
 
@@ -78,12 +82,22 @@ for BRANCH in "${BRANCHES_TO_SYNC[@]}"; do
     continue
   }
 
-  if git merge upstream/main --no-edit --quiet 2>&1; then
+  MERGE_OUTPUT=$(git merge upstream/main --no-edit 2>&1)
+  MERGE_RC=$?
+  if [ $MERGE_RC -eq 0 ]; then
     git push origin "$BRANCH:refs/heads/$BRANCH" --quiet 2>&1
     SUMMARY="${SUMMARY}Merged latest main into '${BRANCH}' and pushed (no conflicts).\n"
   else
-    git merge --abort 2>&1
-    echo "WARNING: merging main into '${BRANCH}' has a real conflict -- needs manual resolution (git checkout ${BRANCH} && git merge upstream/main). Left '${BRANCH}' untouched."
+    # Distinguish real merge conflicts from other git errors.
+    MERGE_HEAD_EXISTS=0
+    [ -f "$SYNC_DIR/.git/MERGE_HEAD" ] && MERGE_HEAD_EXISTS=1
+    CONFLICTING_FILES=$(git diff --name-only --diff-filter=U 2>/dev/null)
+    if [ -n "$CONFLICTING_FILES" ]; then
+      echo "WARNING: real conflict in: $(echo "$CONFLICTING_FILES" | tr '\n' ', ' | sed 's/,$//')"
+    else
+      echo "WARNING: merge failed -- $MERGE_OUTPUT"
+    fi
+    [ "$MERGE_HEAD_EXISTS" -eq 1 ] && git merge --abort 2>&1
     WARNED=1
   fi
 done
