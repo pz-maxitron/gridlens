@@ -633,6 +633,28 @@ def fetch_url_text(url):
                         if buf.tell() + len(chunk) > 40 * 1024 * 1024:
                             return ""
                         buf.write(chunk)
+            tmp_file = buf  # keep in memory
+            # Prefer poppler pdftotext if available
+            pdftotext_path = "/usr/bin/pdftotext"
+            if os.path.exists(pdftotext_path) and os.access(pdftotext_path, os.X_OK):
+                # Write to a temp file for pdftotext
+                import tempfile
+                fd, pdf_path = tempfile.mkstemp(suffix=".pdf")
+                try:
+                    os.write(fd, buf.getvalue())
+                    os.close(fd)
+                    result = subprocess.run(
+                        [pdftotext_path, "-layout", pdf_path, "-"],
+                        capture_output=True, text=True, timeout=90,
+                    )
+                    if result.returncode == 0:
+                        text = result.stdout
+                        return text
+                except Exception:
+                    pass  # fall through to pypdf
+                finally:
+                    os.unlink(pdf_path)
+            # Fallback: pypdf
             buf.seek(0)
             reader = pypdf.PdfReader(buf)
             text_pages = []
