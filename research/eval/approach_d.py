@@ -37,6 +37,7 @@ Environment:
 import concurrent.futures as cf
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 import re
 import subprocess
 import sys
@@ -887,9 +888,16 @@ def main():
     findings, rejected, rejected_country, rejected_filter = [], 0, 0, 0
     rej_lines = []
 
-    for i in range(0, len(all_hits), JUDGE_BATCH):
+    # Judge answers are fetched concurrently (JUDGE_CONCURRENCY, default 2;
+    # 1 = sequential); everything below runs unchanged, in batch order.
+    offsets = range(0, len(all_hits), JUDGE_BATCH)
+    workers = max(1, int(os.environ.get("JUDGE_CONCURRENCY", "2")))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        answers = pool.map(lambda o: judge(country, tool, all_hits[o:o + JUDGE_BATCH]), offsets)
+        answers = list(answers)
+    for i, answer in zip(offsets, answers):
         batch = all_hits[i:i + JUDGE_BATCH]
-        for f in judge(country, tool, batch):
+        for f in answer:
             try:
                 h = batch[int(f.get("hit", -1))]
             except (ValueError, IndexError, TypeError):
