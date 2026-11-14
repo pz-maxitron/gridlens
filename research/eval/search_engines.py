@@ -7,9 +7,127 @@ from pathlib import Path
 ENGINES = ["parallel", "keenable", "exa", "ddgs", "searxng"]
 THROTTLE = {"parallel": 0.5, "keenable": 1.0, "exa": 2.0, "ddgs": 2.0, "searxng": 1.0, "openalex": 1.0}
 CACHE_PATH = Path.home() / ".cache/gridlens-search-cache.sqlite"
+COOLDOWN_DB = Path.home() / ".cache/gridlens-search-cache.sqlite"
 CACHE_TTL = 30 * 86400
 LOG_PATH = Path("data/raw/eval/engine_log.jsonl")
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Cross-process throttle / cooldown via SQLite ────────────────────────────
+# Each engine's last-call timestamp and cooldown-until are stored here so that
+# multiple pipelines together never exceed one pipeline's rate per engine.
+_THROTTLE_DB = Path.home() / ".cache/gridlens-search-cache.sqlite"
+
+
+def _init_throttle_db():
+    """Create the throttle/cooldown/consec table if it does not exist."""
+    _THROTTLE_DB.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS throttle ("
+        "engine TEXT PRIMARY KEY, "
+        "last_call REAL, "
+        "cooldown_until REAL, "
+        "consec_fail INTEGER DEFAULT 0"
+        ")"
+    )
+    conn.commit()
+    conn.close()
+
+
+_init_throttle_db()
+
+
+def _cross_process_throttle(engine):
+    """Check and update the per-engine throttle using an IMMEDIATE sqlite
+    transaction, sleeping if necessary.  Replaces the in-memory _last dict."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    try:
+        row = conn.execute(
+            "SELECT last_call FROM throttle WHERE engine=?", (engine,)
+        ).fetchone()
+        last = row[0] if row else 0
+    finally:
+        conn.close()
+
+    interval = THROTTLE.get(engine, 0.2)
+    wait = interval - (time.monotonic() - last)
+    if wait > 0:
+        time.sleep(wait)
+
+    now = time.monotonic()
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute(
+        "INSERT OR REPLACE INTO throttle (engine, last_call) VALUES (?, ?)",
+        (engine, now),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _cross_process_cooldown_check(engine):
+    """Return True if engine is off cooldown.  Replaces _cooldowns dict."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    try:
+        row = conn.execute(
+            "SELECT cooldown_until FROM throttle WHERE engine=?", (engine,)
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row or row[0] <= 0:
+        return True
+    return row[0] <= time.monotonic()
+
+
+def _cross_process_cooldown_set(engine, monotonic_now):
+    """Set cooldown-until for an engine with exponential backoff.
+    Uses the consecutive-failures counter from SQLite."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    try:
+        row = conn.execute(
+            "SELECT consec_fail FROM throttle WHERE engine=?", (engine,)
+        ).fetchone()
+        consec = row[0] if row else 0
+    finally:
+        conn.close()
+    dur = min(15 * 60, 60 * (2 ** consec))
+    until = monotonic_now + dur
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute(
+        "INSERT OR REPLACE INTO throttle (engine, cooldown_until) VALUES (?, ?)",
+        (engine, until),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _cross_process_consec_inc(engine):
+    """Increment consecutive-failures counter for an engine."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute(
+        "INSERT OR REPLACE INTO throttle (engine, consec_fail) "
+        "SELECT engine, COALESCE(consec_fail, 0) + 1 FROM throttle WHERE engine=?",
+        (engine,),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _cross_process_consec_reset(engine):
+    """Reset consecutive-failures counter for an engine."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute(
+        "UPDATE throttle SET consec_fail = 0 WHERE engine=?", (engine,)
+    )
+    conn.commit()
+    conn.close()
+
+
+def _cross_process_cooldown_clear(engine):
+    """Clear cooldown for an engine (on success)."""
+    conn = sqlite3.connect(str(_THROTTLE_DB))
+    conn.execute("UPDATE throttle SET cooldown_until = 0 WHERE engine=?", (engine,))
+    conn.commit()
+    conn.close()
 
 # ── Polite pool ─────────────────────────────────────────────────────────────
 _OPENALEX_MAILTO = os.environ.get("OPENALEX_MAILTO")
@@ -22,31 +140,22 @@ _cooldowns: dict[str, float] = {}
 _consec: dict[str, int] = {}
 _last: dict[str, float] = {}
 
-# ── Cooldown / throttle helpers ────────────────────────────────────────────
+# ── Cooldown / throttle helpers (cross-process via SQLite) ─────────────────
+# These wrappers keep the existing API but delegate to SQLite so two or three
+# pipelines together never exceed one pipeline's rate per engine.
 def _engine_ok(name):
-    with _locks["cd"]:
-        return _cooldowns.get(name, 0) <= time.monotonic()
+    return _cross_process_cooldown_check(name)
 
 def _engine_fail(name):
-    with _locks["cd"]:
-        with _locks["co"]:
-            _consec[name] = _consec.get(name, 0) + 1
-        dur = min(15 * 60, 60 * (2 ** _consec[name]))
-        _cooldowns[name] = time.monotonic() + dur
+    _cross_process_consec_inc(name)
+    _cross_process_cooldown_set(name, time.monotonic())
 
 def _engine_okay(name):
-    with _locks["cd"]:
-        _cooldowns.pop(name, None)
-    with _locks["co"]:
-        _consec[name] = 0
+    _cross_process_cooldown_clear(name)
+    _cross_process_consec_reset(name)
 
 def _throttle(name):
-    with _locks["th"]:
-        last = _last.get(name, 0)
-        wait = THROTTLE.get(name, 0.2) - (time.monotonic() - last)
-        if wait > 0:
-            time.sleep(wait)
-        _last[name] = time.monotonic()
+    _cross_process_throttle(name)
 
 # ── Cache ───────────────────────────────────────────────────────────────────
 def _ckey(query, limit):
@@ -202,12 +311,15 @@ def search(query, limit=10):
 
         # No engine was available in this pass (all on cooldown)
         if attempt == 0:
-            # Wait for earliest cooldown (cap 300s)
-            with _locks["cd"]:
-                remaining = {e: d for e, d in _cooldowns.items()
-                             if e in active and d > time.monotonic()}
-            if remaining:
-                wait = min(remaining.values()) - time.monotonic()
+            # Wait for earliest cross-process cooldown (cap 300s)
+            conn = sqlite3.connect(str(_THROTTLE_DB))
+            rows = conn.execute(
+                "SELECT engine, cooldown_until FROM throttle "
+                "WHERE cooldown_until > ?", (time.monotonic(),)
+            ).fetchall()
+            conn.close()
+            if rows:
+                wait = min(d - time.monotonic() for _, d in rows)
                 time.sleep(min(max(wait, 0), 300))
             continue
 
