@@ -48,10 +48,7 @@ CATEGORIES = {
     "government_agency", "government_regulator", "international_body", "development_bank",
     "ngo_foundation", "energy_company_diversified", "project_developer", "other",
 }
-TOOLCATS = {
-    "production_cost_uc", "capacity_expansion", "planning_expansion", "market_simulation",
-    "energy_system_optimization", "forecasting", "distribution_planning", "other",
-}
+TOOLCATS = {"capacity_expansion", "production_cost", "power_flow_dynamics", "other", "unspecified"}
 ROLES = {
     "direct_user", "commissioner", "consultant_modeler", "research_user",
     "subject_of_study", "qa_reviewer",
