@@ -90,11 +90,9 @@ CATEGORIES = ["utility_iso_rto", "utility_tso", "utility_generation", "utility_d
               "government_agency", "government_regulator", "international_body", "development_bank",
               "ngo_foundation", "energy_company_diversified", "project_developer", "other"]
 ROLES = ["direct_user", "commissioner", "consultant_modeler", "research_user", "subject_of_study", "qa_reviewer"]
-# Default modelling category per tool; curation re-classifies each finding
-# from its evidence (gridlens-notes/classify_tool_categories.py).
-TOOLCAT = {"PLEXOS": "production_cost", "PyPSA": "capacity_expansion",
-           "PROMOD": "production_cost", "Bid3": "production_cost",
-           "SDDP": "production_cost"}
+# A finding's modelling category comes from its evidence at curation
+# (gridlens-notes/classify_tool_categories.py); until then it is unspecified.
+TOOLCAT = {t: "unspecified" for t in ("PLEXOS", "PyPSA", "PROMOD", "Bid3", "SDDP")}
 MAX_QUERIES = 60
 MAX_HITS_JUDGED = 100
 JUDGE_BATCH = 4
