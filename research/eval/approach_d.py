@@ -370,6 +370,14 @@ def norm_url(u):
                   .replace("http://", "https://").replace("://www.", "://")).rstrip("/")
 
 
+# Tool-specific queries that reach sources the entity-first queries miss:
+# country models built on the tool, its open-source ecosystem and forums.
+TOOL_QUERIES = {
+    "PyPSA": ["PyPSA-{country}", "PyPSA-Earth {country}", "{country} PyPSA model github",
+              "PyPSA {country} energy system model study", "PyPSA {country} openmod"],
+}
+
+
 def build_queries(country, tool, ents, extra):
     q = []
     for e in ents:
@@ -377,7 +385,7 @@ def build_queries(country, tool, ents, extra):
         ln = (e.get("local_name") or "").strip()
         if ln and ln.lower() != e["name"].lower():
             q.append((f'"{ln}" {tool}', ["exa", "keenable"]))
-    generic = [
+    generic = [q.format(country=country) for q in TOOL_QUERIES.get(tool, [])] + [
         f"{tool} {country}", f"{tool} {country} CIGRE", f"{tool} {country} IEEE",
         f"{tool} {country} ESIG", f"{VENDOR[tool].split(',')[0]} {tool} {country}",
     ] + extra
