@@ -6,6 +6,9 @@ cd /home/gmk/code/plexos-catalogue-web || exit 1
 BATCH_ID="${1:?Usage: bash research/run_d_search.sh <BATCH_ID> <country> [<country> ...]}"
 TOOLS="PLEXOS PyPSA PROMOD Bid3 SDDP"
 mkdir -p research/logs/d
+# One runner per batch: a second runner waits, then skips the pairs already done.
+exec 9>"research/logs/d/${BATCH_ID}.lock"
+flock 9
 for country in "${@:2}"; do
   for tool in $TOOLS; do
     done_file="research/logs/d/${BATCH_ID}.done"
