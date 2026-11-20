@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ComposableMap, Geographies, Geography, ZoomableGroup, Sphere, Graticule } from 'react-simple-maps';
 import { mapColorFor, MAP_HOVER } from '../../lib/colors';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
@@ -21,9 +21,15 @@ interface WorldMapProps {
   onHover?: (name: string | null) => void;
   /** Unit in the tooltip ("projects"). */
   unit?: string;
+  /** More lines in the tooltip for a country, e.g. the tools used there. */
+  details?: (name: string) => ReactNode;
+  /** Click on a country (atlas name). */
+  onSelect?: (name: string) => void;
+  /** Country shown as selected (atlas name). */
+  selected?: string;
 }
 
-export default function WorldMap({ valueByCountry, maxValue, onHover, unit = 'projects' }: WorldMapProps) {
+export default function WorldMap({ valueByCountry, maxValue, onHover, unit = 'projects', details, onSelect, selected }: WorldMapProps) {
   const [loadError, setLoadError] = useState(false);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const [position, setPosition] = useState<{ coordinates: [number, number]; zoom: number }>({
@@ -157,9 +163,10 @@ export default function WorldMap({ valueByCountry, maxValue, onHover, unit = 'pr
                       onHover?.(null);
                       setTooltip(null);
                     }}
+                    onClick={() => value > 0 && onSelect?.(name)}
                     fill={isHovered ? MAP_HOVER : mapColorFor(value, maxValue)}
-                    stroke="#080a13"
-                    strokeWidth={0.5 / position.zoom}
+                    stroke={selected === name ? '#f4efe6' : '#080a13'}
+                    strokeWidth={(selected === name ? 1.6 : 0.5) / position.zoom}
                     style={{ outline: 'none', cursor: 'pointer' }}
                   />
                 );
@@ -171,11 +178,13 @@ export default function WorldMap({ valueByCountry, maxValue, onHover, unit = 'pr
 
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-lg border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs shadow-xl"
+          className={`pointer-events-none absolute z-20 w-max max-w-64 -translate-x-1/2 rounded-xl ${tooltip.y < 200 ? 'translate-y-4' : '-translate-y-[calc(100%+12px)]'} border border-ink-700 bg-ink-950/95 px-3 py-2 text-xs shadow-2xl backdrop-blur`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <p className="font-semibold text-ink-100">{tooltip.name}</p>
+          <p className="font-semibold text-ink-50">{tooltip.name}</p>
           <p className="text-brand-300">{tooltip.value.toLocaleString()} {unit}</p>
+          {tooltip.value > 0 && details?.(tooltip.name)}
+          {tooltip.value > 0 && onSelect && <p className="mt-1.5 text-[10px] text-ink-500">{selected === tooltip.name ? 'Click to clear the country filter' : 'Click to filter every chart'}</p>}
         </div>
       )}
     </div>

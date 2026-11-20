@@ -38,7 +38,7 @@ function ToolProfile({ name }: { name: string }) {
   const info = toolInfo(name)!;
   const open = isOpenSource(name);
   const color = open ? OPEN_SOURCE : PROPRIETARY;
-  const { records: filtered, catalogue } = useChart('tool');
+  const { records: filtered, catalogue, filters, setFilters } = useChart('tool', ['toolName', 'license']);
   const records = useMemo(() => filtered.filter((r) => r.tool_name === name), [filtered, name]);
   const total = useMemo(() => catalogue.filter((r) => r.tool_name === name).length, [catalogue, name]);
 
@@ -100,7 +100,7 @@ function ToolProfile({ name }: { name: string }) {
         </div>
       </header>
 
-      <ChartCard id="tool" plain fields={ALL_FIELDS.filter((f) => f !== 'toolName' && f !== 'license')}
+      <ChartCard id="tool" plain ignore={['toolName', 'license']} fields={ALL_FIELDS.filter((f) => f !== 'toolName' && f !== 'license')}
         description={records.length === total ? `${total === 1 ? 'One documented project' : `All ${total} documented projects`}. Filter by country, period, sector or type of organization.` : `${records.length} of ${total} projects match the filters.`}>
         <dl className="grid grid-cols-2 gap-6 border-y border-ink-800/80 py-6 sm:grid-cols-4">
           {[
@@ -121,7 +121,9 @@ function ToolProfile({ name }: { name: string }) {
         ) : (
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Panel title="Where it is used" note="Projects per country; regional and global studies count in every country they cover." className="lg:col-span-2">
-              <WorldMap valueByCountry={atlas} maxValue={Math.max(1, ...atlas.values())} />
+              <WorldMap valueByCountry={atlas} maxValue={Math.max(1, ...atlas.values())}
+                selected={filters.country === 'All' ? undefined : toAtlasName(filters.country)}
+                onSelect={(n) => { const c = [...countries.keys()].find((k) => toAtlasName(k) === n) ?? n; setFilters({ ...filters, country: filters.country === c ? 'All' : c }); }} />
             </Panel>
             <Panel title="Used for" note="Projects per kind of grid decision, where the source names one.">
               {decisions.length ? <HorizontalBarChart data={decisions} colorOf={() => color} unit="projects" /> : <p className="text-sm text-ink-500">No decision stated in the sources yet.</p>}

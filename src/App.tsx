@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import catalogueData from './data/catalogue.json';
 import type { CatalogueRecord } from './types';
-import { CHART_IDS, PAGES, slug, useRoute } from './lib/router';
+import { PAGES, slug, useRoute } from './lib/router';
 import { ChartFiltersProvider } from './lib/chartFilters';
 import { TOOLS } from './lib/tools';
 import Shell from './components/layout/Shell';
@@ -30,7 +30,7 @@ export default function App() {
   }, []);
 
   return (
-    <ChartFiltersProvider catalogue={catalogue} chartIds={CHART_IDS}>
+    <ChartFiltersProvider catalogue={catalogue}>
       <Shell route={route}>
         <div key={route.page + (route.tool ?? '')}>
           {route.page === '/' && <Overview catalogue={catalogue} />}

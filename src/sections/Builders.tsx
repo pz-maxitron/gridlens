@@ -2,13 +2,19 @@ import { useMemo, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { contributorsInWindow, CONTRIBUTORS, WINDOWS, windowLabel, type ContributorOrg } from '../lib/contributors';
 import { Link, slug } from '../lib/router';
-import { TOOLS } from '../lib/tools';
+import { isOpenSource, TOOLS, toolInfo } from '../lib/tools';
+import { useChart } from '../lib/chartFilters';
 import ChartCard from '../components/chart/ChartCard';
 import EmptyState from '../components/common/EmptyState';
 import ToolLogo from '../components/common/ToolLogo';
 
 const OPEN_TOOLS = TOOLS.filter((t) => t.license === 'open_source' && CONTRIBUTORS.tools[t.name]).map((t) => t.name);
 const SHOWN = 12;
+/** The filter panel offers only the open-source tools with code data, and their categories. */
+const CHOICES = {
+  toolNames: OPEN_TOOLS,
+  toolCategories: [...new Set(OPEN_TOOLS.flatMap((t) => toolInfo(t)!.categories))],
+};
 
 /** The caveat shown with every contribution ranking. */
 export function ContributionCaveat() {
@@ -25,7 +31,7 @@ export function ContributionCaveat() {
 export function WindowSlider({ months, onChange }: { months: number; onChange: (m: number) => void }) {
   const i = Math.max(0, WINDOWS.indexOf(months));
   return (
-    <label className="flex min-w-0 flex-1 basis-64 items-center gap-3 text-xs text-ink-400">
+    <label className="flex min-w-0 flex-1 basis-64 items-center gap-3 text-xs text-ink-400 sm:min-w-72">
       <span className="shrink-0">Last</span>
       <input
         type="range" min={0} max={WINDOWS.length - 1} step={1} value={i}
@@ -100,37 +106,46 @@ export function ContributionSource({ tools }: { tools: string[] }) {
 
 /**
  * Who builds the open-source tools: organizations ranked by their people's pull requests merged into each
- * tool's GitHub organizations over a window the reader picks (default 12 months).
+ * tool's GitHub organizations over a window the reader picks (default 12 months). The tool, tool-category and
+ * licence filters apply; others (country, sector…) say nothing about who writes the code.
  */
 export default function Builders() {
-  const [tool, setTool] = useState('All');
+  const { filters } = useChart('builders');
   const [months, setMonths] = useState(12);
-  const tools = tool === 'All' ? OPEN_TOOLS : [tool];
-  const orgs = useMemo(() => contributorsInWindow(tools, months), [tool, months]); // eslint-disable-line react-hooks/exhaustive-deps
+  const tools = OPEN_TOOLS.filter((t) =>
+    (filters.toolName === 'All' || filters.toolName === t) &&
+    (filters.toolCategory === 'All' || toolInfo(t)!.categories.includes(filters.toolCategory)) &&
+    filters.license !== 'proprietary');
+  const key = tools.join();
+  const orgs = useMemo(() => contributorsInWindow(tools, months), [key, months]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <ChartCard
       id="builders"
       title="Who builds the open-source tools"
       description="Organizations whose people had the most pull requests merged into each tool’s code. Working with them also supports the tools everyone uses."
-      fields={[]}
+      fields={['toolName', 'toolCategory', 'license']}
+      choices={CHOICES}
+      actions={<WindowSlider months={months} onChange={setMonths} />}
     >
-      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-        <div role="tablist" aria-label="Tool" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
-          {['All', ...OPEN_TOOLS].map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={tool === t} onClick={() => setTool(t)}
-              className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-colors ${tool === t ? 'bg-ink-50 text-ink-950' : 'text-ink-400 hover:bg-ink-800/70 hover:text-ink-100'}`}>
-              {t !== 'All' && <ToolLogo name={t} size={18} />}
-              {t === 'All' ? 'All' : t}
-            </button>
-          ))}
-        </div>
-        <WindowSlider months={months} onChange={setMonths} />
-      </div>
-      <ContributorBars orgs={orgs} showTools={tool === 'All'} />
-      <ContributionSource tools={tools} />
-      {tool !== 'All' && (
-        <Link href={`/tools/${slug(tool)}#builders`} className="mt-2 inline-flex items-center gap-1 text-xs text-brand-300 hover:text-brand-200">{tool} profile <ArrowUpRight size={12} /></Link>
+      {(['country', 'sector', 'orgType', 'period'] as const).some((k) => filters[k] !== 'All') && (
+        <p className="mb-4 text-xs text-ink-500">Code contributions are not tied to a country, sector or study year, so those filters don’t change this ranking.</p>
+      )}
+      {tools.length === 0 ? (
+        <EmptyState title="No open-source tool matches these filters"
+          message={filters.toolName !== 'All' && !isOpenSource(filters.toolName) ? `${filters.toolName} is proprietary: its code and contributors are not public.` : 'Change the tool or category filter.'} />
+      ) : (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {tools.map((t) => (
+              <Link key={t} href={`/tools/${slug(t)}#builders`} className="flex items-center gap-1.5 text-xs text-ink-400 hover:text-ink-50">
+                <ToolLogo name={t} size={16} />{t}
+              </Link>
+            ))}
+          </div>
+          <ContributorBars orgs={orgs} showTools={tools.length > 1} />
+          <ContributionSource tools={tools} />
+        </>
       )}
       <ContributionCaveat />
     </ChartCard>

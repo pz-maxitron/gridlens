@@ -23,9 +23,6 @@ export const SECTIONS = [
   { id: 'builders', label: 'Who builds open source' },
 ] as const;
 
-/** Every filterable chart on any page. */
-export const CHART_IDS = ['adoption', 'purpose', 'momentum', 'map', 'decisions', 'builders', 'projects', 'tool'];
-
 /** URL-safe tool name: "PSS/E" → "pss-e", "DIgSILENT PowerFactory" → "digsilent-powerfactory". */
 export function slug(name: string): string {
   return name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

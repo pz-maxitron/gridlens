@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filtersToSearch, mergeChartSearch, searchToChartFilters, searchToFilters } from './filterParams';
+import { filtersToSearch, mergeFilterSearch, searchToFilters } from './filterParams';
 import { EMPTY_FILTERS } from '../types';
 
 describe('filter query string', () => {
@@ -20,15 +20,9 @@ describe('filter query string', () => {
   });
 });
 
-describe('per-chart filters in the URL', () => {
-  it('keeps each chart apart and restores it', () => {
-    const state = { decisions: { ...EMPTY_FILTERS, country: 'Spain' }, map: { ...EMPTY_FILTERS, toolName: 'PyPSA' } };
-    const s = mergeChartSearch('', state);
-    expect(s).toBe('?decisions.country=Spain&map.tool=PyPSA');
-    expect(searchToChartFilters(s, ['decisions', 'map'])).toEqual(state);
-  });
-
-  it('leaves other parameters of the page alone', () => {
-    expect(mergeChartSearch('?type=consultancy&tool=PyPSA', { decisions: EMPTY_FILTERS })).toBe('?type=consultancy&tool=PyPSA');
+describe('shared filters in the URL', () => {
+  it('replaces the filter keys and leaves other parameters of the page alone', () => {
+    expect(mergeFilterSearch('?type=consultancy&tool=PyPSA&country=Chile', { ...EMPTY_FILTERS, country: 'Spain' })).toBe('?type=consultancy&country=Spain');
+    expect(mergeFilterSearch('?country=Chile', EMPTY_FILTERS)).toBe('');
   });
 });

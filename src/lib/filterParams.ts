@@ -1,7 +1,7 @@
 import type { Filters } from '../types';
 import { EMPTY_FILTERS } from '../types';
 
-/** URL query keys for each filter, e.g. ?decisions.country=Spain&decisions.tool=PyPSA. */
+/** URL query keys for each filter, e.g. ?country=Spain&tool=PyPSA. */
 const PARAM: Record<keyof Filters, string> = {
   country: 'country',
   toolName: 'tool',
@@ -51,30 +51,11 @@ export function searchToFilters(search: string): Filters {
   return read(new URLSearchParams(search));
 }
 
-/**
- * Every chart keeps its own filters. In the URL they are prefixed with the chart id
- * (`?decisions.country=Spain&map.tool=PyPSA`), so one link restores the whole page.
- */
-export type ChartFilters = Record<string, Filters>;
-
-export function chartFiltersToSearch(state: ChartFilters): string {
-  const params = new URLSearchParams();
-  for (const id of Object.keys(state).sort()) write(params, state[id], `${id}.`);
-  const s = params.toString();
-  return s ? `?${s}` : '';
-}
-
-/** Reads the filters of the given charts. */
-export function searchToChartFilters(search: string, chartIds: string[]): ChartFilters {
-  const params = new URLSearchParams(search);
-  return Object.fromEntries(chartIds.map((id) => [id, read(params, `${id}.`)]));
-}
-
-/** The address bar's query string with the charts' filters written in; other parameters (a page's own ?type=) stay. */
-export function mergeChartSearch(current: string, state: ChartFilters): string {
+/** The address bar's query string with the filters written in; other parameters (a page's own ?type=) stay. */
+export function mergeFilterSearch(current: string, filters: Filters): string {
   const params = new URLSearchParams(current);
-  for (const key of [...params.keys()]) if (key.includes('.') && key.split('.')[0] in state) params.delete(key);
-  for (const id of Object.keys(state).sort()) write(params, state[id], `${id}.`);
+  for (const key of KEYS) params.delete(PARAM[key]);
+  write(params, filters);
   const s = params.toString();
   return s ? `?${s}` : '';
 }

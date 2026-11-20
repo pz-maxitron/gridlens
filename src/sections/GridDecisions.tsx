@@ -8,6 +8,7 @@ import { IMPACT_INFO, IMPACT_ORDER, projectImpact, rankProjects, type Impact } f
 import { orgGroup, orgGroupLabel } from '../lib/orgTypes';
 import { DECISION_INFO, DECISION_TYPES, decisionOf } from '../lib/insights';
 import { Link, slug } from '../lib/router';
+import { filtersToSearch } from '../lib/filterParams';
 
 const IMPACT_DOT: Record<Impact, string> = { high: 'bg-brand-400', medium: 'bg-rose-400', low: 'bg-ink-500' };
 const PAGE = 6;
@@ -114,7 +115,7 @@ export default function GridDecisions() {
                 Show more ({ranked.length - shown} left)
               </button>
             )}
-            <Link href={`/projects${type === 'All' ? '' : `?projects.q=${encodeURIComponent(type)}`}`}
+            <Link href={`/projects${filtersToSearch(filters)}`}
               className="flex h-9 items-center rounded-full px-4 text-xs text-ink-400 hover:text-ink-50">
               Open in the project table
             </Link>

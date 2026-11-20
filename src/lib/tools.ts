@@ -8,6 +8,8 @@ export interface ToolInfo {
   url: string;
   /** GitHub organizations holding the tool's ecosystem of repositories (open-source tools). */
   github_orgs?: string[];
+  /** What the tool is built for (ids from toolCategories.ts). */
+  categories: string[];
 }
 
 /** Logo file in public/logos/, when we have a usable one (tool ecosystem for open source, vendor otherwise). */

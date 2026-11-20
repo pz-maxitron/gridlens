@@ -4,7 +4,8 @@ import { EMPTY_FILTERS } from '../types';
 import { applyFilters, uniqSorted } from './filters';
 import { splitCategories, TOOL_CATEGORIES } from './toolCategories';
 import { orgGroup, ORG_GROUPS } from './orgTypes';
-import { mergeChartSearch, searchToChartFilters, type ChartFilters } from './filterParams';
+import { activeCount, mergeFilterSearch, searchToFilters } from './filterParams';
+import { useRoute } from './router';
 
 /** Choices offered in every chart's filter panel. */
 export interface FilterOptions {
@@ -16,14 +17,14 @@ export interface FilterOptions {
   sourceGroups: string[];
 }
 
-interface ChartState {
+interface FilterState {
   catalogue: CatalogueRecord[];
   options: FilterOptions;
-  filters: ChartFilters;
-  setFilters: (id: string, f: Filters) => void;
+  filters: Filters;
+  setFilters: (f: Filters) => void;
 }
 
-const Ctx = createContext<ChartState | null>(null);
+const Ctx = createContext<FilterState | null>(null);
 
 function optionsFor(catalogue: CatalogueRecord[]): FilterOptions {
   const present = new Set(catalogue.flatMap((r) => splitCategories(r.tool_category)));
@@ -39,39 +40,52 @@ function optionsFor(catalogue: CatalogueRecord[]): FilterOptions {
 }
 
 /**
- * Holds the filters of every chart on the page and mirrors them in the URL
- * (`?decisions.country=Spain`), so a copied link restores each chart's selection.
+ * One set of filters shared by every chart: a filter picked in any chart (or a click on a map country)
+ * applies to all of them, as on artificialanalysis.ai. The filters are mirrored in the URL (`?country=Spain`)
+ * so a copied link restores the view, and they stay set while moving between pages.
  */
-export function ChartFiltersProvider({ catalogue, chartIds, children }: {
-  catalogue: CatalogueRecord[]; chartIds: string[]; children: ReactNode;
-}) {
+export function ChartFiltersProvider({ catalogue, children }: { catalogue: CatalogueRecord[]; children: ReactNode }) {
   const options = useMemo(() => optionsFor(catalogue), [catalogue]);
-  const [filters, setAll] = useState<ChartFilters>(() => searchToChartFilters(window.location.search, chartIds));
+  const [filters, setFilters] = useState<Filters>(() => searchToFilters(window.location.search));
+  const route = useRoute();
+
+  // After a navigation: a link that carries filters sets them; otherwise the current ones are written into the new URL.
+  useEffect(() => {
+    const fromUrl = searchToFilters(window.location.search);
+    if (activeCount(fromUrl) > 0) setFilters((f) => (JSON.stringify(f) === JSON.stringify(fromUrl) ? f : fromUrl));
+  }, [route]);
 
   useEffect(() => {
-    const search = mergeChartSearch(window.location.search, filters);
+    const search = mergeFilterSearch(window.location.search, filters);
     if (search !== window.location.search) {
       window.history.replaceState(window.history.state, '', window.location.pathname + search + window.location.hash);
     }
-  }, [filters]);
+  }, [filters, route]);
 
   useEffect(() => {
-    const onPop = () => setAll(searchToChartFilters(window.location.search, chartIds));
+    const onPop = () => setFilters(searchToFilters(window.location.search));
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [chartIds]);
+  }, []);
 
-  const setFilters = useCallback((id: string, f: Filters) => setAll((s) => ({ ...s, [id]: f })), []);
-  const value = useMemo(() => ({ catalogue, options, filters, setFilters }), [catalogue, options, filters, setFilters]);
+  const value = useMemo(() => ({ catalogue, options, filters, setFilters }), [catalogue, options, filters]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/** The filters of one chart and the projects they select. */
-export function useChart(id: string) {
+/**
+ * The shared filters and the projects they select. `ignore` lists filters a view sets itself
+ * (a tool page is always about its tool), so they are not applied to its records.
+ */
+export function useChart(id: string, ignore: (keyof Filters)[] = []) {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useChart needs a ChartFiltersProvider');
-  const filters = ctx.filters[id] ?? EMPTY_FILTERS;
-  const records = useMemo(() => applyFilters(ctx.catalogue, filters), [ctx.catalogue, filters]);
-  const setFilters = useCallback((f: Filters) => ctx.setFilters(id, f), [ctx, id]);
-  return { id, filters, setFilters, records, catalogue: ctx.catalogue, options: ctx.options };
+  const { filters, catalogue } = ctx;
+  const key = ignore.join();
+  const records = useMemo(() => {
+    const f = { ...filters };
+    for (const k of ignore) (f[k] as string) = EMPTY_FILTERS[k];
+    return applyFilters(catalogue, f);
+  }, [catalogue, filters, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setFilters = useCallback((f: Filters) => ctx.setFilters(f), [ctx]);
+  return { id, filters, setFilters, records, catalogue, options: ctx.options };
 }

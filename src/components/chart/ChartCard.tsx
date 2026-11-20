@@ -3,7 +3,7 @@ import { Check, Link2, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Filters } from '../../types';
 import { EMPTY_FILTERS } from '../../types';
 import { useChart, type FilterOptions } from '../../lib/chartFilters';
-import { activeCount, chartFiltersToSearch } from '../../lib/filterParams';
+import { activeCount, filtersToSearch } from '../../lib/filterParams';
 import { categoryLabel } from '../../lib/toolCategories';
 import { PERIODS, periodStart } from '../../lib/filters';
 import { orgGroupLabel, sectorLabel, SECTORS, SOURCE_GROUP_LABELS } from '../../lib/orgTypes';
@@ -53,11 +53,15 @@ function Select({ label, value, options, display, onChange }: {
 }
 
 /**
- * Card for one chart: title, its own filters (button → popover on desktop, bottom sheet on phones),
- * the active filters as removable chips, and a button that copies a link to this chart as filtered.
+ * Card for one chart: title, a filter button (popover on desktop, bottom sheet on phones) for the filters
+ * every chart shares, the active ones as removable chips, and a button that copies a link to this view.
  */
-export default function ChartCard({ id, title, description, fields = ALL_FIELDS, actions, plain = false, children }: {
+export default function ChartCard({ id, title, description, fields = ALL_FIELDS, actions, plain = false, ignore = [], choices, children }: {
   id: string;
+  /** Filters this view sets itself (a tool page's tool): not counted, not offered. */
+  ignore?: FilterKey[];
+  /** Narrower choices for this chart (e.g. only the open-source tools). */
+  choices?: Partial<FilterOptions>;
   title?: string;
   /** No card frame: for a page-wide filter bar around several panels. */
   plain?: boolean;
@@ -68,11 +72,12 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { filters, setFilters, records, catalogue, options } = useChart(id);
+  const { filters, setFilters, records, catalogue, options: all } = useChart(id, ignore);
+  const options = { ...all, ...choices };
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
-  const active = fields.filter((k) => filters[k].trim() !== EMPTY_FILTERS[k]);
+  const active = fields.filter((k) => !ignore.includes(k) && filters[k].trim() !== EMPTY_FILTERS[k]);
 
   useEffect(() => {
     if (!open) return;
@@ -83,7 +88,7 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
   }, [open]);
 
   async function copyLink() {
-    const url = `${window.location.origin}${window.location.pathname}${chartFiltersToSearch({ [id]: filters })}#${id}`;
+    const url = `${window.location.origin}${window.location.pathname}${filtersToSearch(filters)}#${id}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -97,7 +102,7 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
   const iconBtn = 'flex h-9 items-center gap-1.5 rounded-full border border-ink-700/80 px-3 text-xs font-medium text-ink-300 transition-colors hover:border-ink-500 hover:text-ink-50';
 
   return (
-    <div className={plain ? '' : 'rounded-2xl border border-ink-800/80 bg-ink-900/40 p-4 transition-colors duration-300 hover:border-ink-700 sm:p-6'}>
+    <div className={plain ? '' : 'rounded-2xl border border-ink-800/80 bg-ink-900/40 p-4 sm:p-6'}>
       <div className="mb-4 flex flex-wrap items-start gap-3">
         <div className="order-1 min-w-0 flex-1 basis-48">
           {title && <h3 className="font-display text-xl font-medium text-ink-50">{title}</h3>}
@@ -105,7 +110,7 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
         </div>
         {actions && <div className="order-3 flex basis-full flex-wrap items-center gap-2 lg:order-2 lg:basis-auto">{actions}</div>}
         <div className="relative order-2 flex items-center gap-2 lg:order-3">
-          <button type="button" onClick={copyLink} className={iconBtn} aria-label={`Copy link to ${title ?? 'this view'}`} title="Copy link to this chart">
+          <button type="button" onClick={copyLink} className={iconBtn} aria-label={`Copy link to ${title ?? 'this view'}`} title="Copy link to this view">
             {copied ? <Check size={15} /> : <Link2 size={15} />}
           </button>
           {fields.length > 0 && <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Filters" className={`${iconBtn} ${active.length ? 'border-brand-500/70 text-brand-200' : ''}`}>
@@ -122,7 +127,10 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
                 className="fixed inset-x-0 bottom-0 z-40 max-h-[85vh] overflow-y-auto rounded-t-2xl border border-ink-800 bg-ink-950 p-4 pb-6 shadow-2xl md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:top-full md:mt-2 md:w-[34rem] md:rounded-xl"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-ink-100">Filter this chart</p>
+                  <div>
+                    <p className="text-sm font-semibold text-ink-100">Filters</p>
+                    <p className="text-xs text-ink-500">Apply to every chart</p>
+                  </div>
                   <span className="text-xs text-ink-500"><span className="font-semibold text-ink-200">{records.length}</span> of {catalogue.length} projects</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -146,7 +154,7 @@ export default function ChartCard({ id, title, description, fields = ALL_FIELDS,
                 </div>
                 <div className="sticky -bottom-6 -mx-4 mt-4 flex justify-end gap-2 border-t border-ink-800 bg-ink-950 px-4 pb-1 pt-3 md:static md:mx-0 md:border-0 md:p-0">
                   {activeCount(filters) > 0 && (
-                    <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="rounded-full border border-ink-700 px-4 py-2 text-sm text-ink-300 hover:text-ink-100">Clear all</button>
+                    <button type="button" onClick={() => setFilters({ ...EMPTY_FILTERS, ...Object.fromEntries(ignore.map((k) => [k, filters[k]])) })} className="rounded-full border border-ink-700 px-4 py-2 text-sm text-ink-300 hover:text-ink-100">Clear all</button>
                   )}
                   <button type="button" onClick={() => setOpen(false)} className="rounded-full bg-ink-50 px-4 py-2 text-sm font-medium text-ink-950 hover:bg-white">Done</button>
                 </div>
