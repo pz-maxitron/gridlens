@@ -1,9 +1,10 @@
 import { useMemo, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import type { CatalogueRecord } from '../types';
-import { Link } from '../lib/router';
+import { Link, slug as toolSlug } from '../lib/router';
 import { openShare } from '../lib/insights';
-import { isOpenSource } from '../lib/tools';
+import { catalogueUpdated, isOpenSource, searchFreshness } from '../lib/tools';
+import { formatDate } from '../lib/dates';
 import AdoptionRanking from '../components/common/AdoptionRanking';
 import changelog from '../data/changelog.json';
 import PurposeMatrix from '../sections/PurposeMatrix';
@@ -33,6 +34,30 @@ const PATHS = [
   { who: 'Industry', what: 'Organizations that build the open-source tools', href: '/#builders' },
   { who: 'Researchers', what: 'Every project with its sources, as CSV', href: '/projects' },
 ];
+
+/** When the catalogue was last searched; hover or tap for each tool's last search, stalest first. */
+function CatalogueUpdated() {
+  const updated = catalogueUpdated();
+  if (!updated) return null;
+  return (
+    <div className="group relative mt-6 w-fit text-sm text-ink-400">
+      <button type="button" className="underline decoration-ink-700 decoration-dotted underline-offset-4 hover:text-ink-200">
+        Catalogue updated <span className="text-ink-200">{formatDate(updated)}</span>
+      </button>
+      <div role="tooltip" className="invisible absolute left-0 top-full z-30 mt-2 w-72 rounded-xl border border-ink-800 bg-ink-950 p-4 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+        <p className="mb-2 text-xs uppercase tracking-[0.14em] text-ink-500">Last search per tool</p>
+        <ul className="space-y-1">
+          {searchFreshness().map((t) => (
+            <li key={t.name} className="flex justify-between gap-4 text-xs">
+              <Link href={`/tools/${toolSlug(t.name)}`} className="text-ink-200 hover:text-brand-200">{t.name}</Link>
+              <span className={t.lastSearched ? 'tabular text-ink-400' : 'text-ink-500'}>{t.lastSearched ? formatDate(t.lastSearched) : 'not yet'}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
 
 export default function Overview({ catalogue }: { catalogue: CatalogueRecord[] }) {
   const facts = useMemo(() => {
@@ -75,6 +100,7 @@ export default function Overview({ catalogue }: { catalogue: CatalogueRecord[] }
             </div>
           ))}
         </dl>
+        <CatalogueUpdated />
         {facts.openNow !== null && (
           <p className="mt-8 text-sm text-ink-400">
             <span className="text-brand-300">{facts.openNow}%</span> of {THIS_YEAR - 1}’s projects used an open-source tool

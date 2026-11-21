@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useChart } from '../lib/chartFilters';
 import type { Filters } from '../types';
-import { dateKey } from '../lib/dates';
+import { dateKey, formatDate } from '../lib/dates';
 import { filtersToSearch } from '../lib/filterParams';
 import { decisionOf, DECISION_INFO, OTHER_DECISION, organizationDirectory, projectsPerYear, serviceProviders } from '../lib/insights';
 import { CONTRIBUTORS, contributorsInWindow, type Metric } from '../lib/contributors';
@@ -233,7 +233,13 @@ function ToolProfile({ name }: { name: string }) {
         <div className="flex flex-col gap-6 md:flex-row md:items-end">
           <ToolLogo name={name} size={88} />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-3"><LicenseBadge tool={name} />{info.licenseName && <span className="text-xs text-ink-500">{info.licenseName}</span>}</div>
+            <div className="flex flex-wrap items-center gap-3">
+              <LicenseBadge tool={name} />
+              {info.licenseName && <span className="text-xs text-ink-500">{info.licenseName}</span>}
+              <Link href="/about#sources" className="text-xs text-ink-400 hover:text-ink-200" title="When GridLens last searched the web and publications for projects using this tool.">
+                {info.last_searched ? <>Last searched <span className="text-ink-200">{formatDate(info.last_searched)}</span></> : 'No dedicated search yet'}
+              </Link>
+            </div>
             <h1 className="font-display mt-2 text-5xl text-ink-50 sm:text-7xl">{name}</h1>
             <p className="mt-2 max-w-2xl text-ink-300">
               {open ? 'Open-source' : 'Commercial'} tool by {info.vendor}
