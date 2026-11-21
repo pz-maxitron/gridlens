@@ -1,6 +1,12 @@
 [
   {
     "date": "21 Nov 2026",
+    "tag": "coverage",
+    "title": "Study dates for 550 more projects",
+    "description": "Projects without a date were dated from their sources: publication metadata of the page or PDF, a date in the URL, or a date a local model read from the text and quoted word for word (never a page-update, copyright, founding or release date). Dates keep the precision the source gives: a day, a month or a year. Projects with an unknown year fell from 927 to 379."
+  },
+  {
+    "date": "21 Nov 2026",
     "tag": "added",
     "title": "PowSyBl added as a tracked tool",
     "description": "PowSyBl, the open-source grid-analysis framework of LF Energy started by RTE, is now tracked: 23 published projects in 11 countries from a country-by-country search of all 199 countries and a deep dive into LF Energy's, Artelys' and grid operators' own pages, each finding checked by an independent validator. Users include RTE, TenneT, Elia, Statnett, Svenska kraftnät, 50Hertz, TransnetBW, the regional coordination centres Coreso and TSCNET, and the Latvian TSO AST. Its code contributors (github.com/powsybl) appear under Who builds the open-source tools."
