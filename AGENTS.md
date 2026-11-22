@@ -10,8 +10,8 @@ GridLens is a public, open-source, zero-backend web app tracking real-world
 adoption of energy system modelling tools (PLEXOS, PyPSA, and dozens more)
 by institutions worldwide — which organization, in which country, uses
 which tool, for what grid decision, with evidence. Built and maintained by
-Open Energy Transition. It fully replaces the earlier `esm-usage-catalog`
-Streamlit prototype as the canonical public repo for this dataset + app.
+Open Energy Transition; this is the canonical public repo for the dataset
+and the app.
 
 Two things evolve independently and both matter equally:
 1. **The dataset** — contributions of new/corrected/removed organizations.
@@ -47,14 +47,13 @@ research/
   AGENTS.md                      Nested agent context (auto-attached) — short summary + pointer to RESEARCH_PLAYBOOK.md
   RESEARCH_PLAYBOOK.md           How to find and verify new organizations (search techniques, taxonomy discipline, stale-negative re-checking)
   world_country_checklist.csv    Per-country coverage tracker (confirmed / gap_confirmed / not_started)
-  history/                       Point-in-time summaries from the original 419-organization research build (historical reference only, not maintained going forward)
 
 scripts/
   validate_dataset.py            Run before every data change: schema/enum/duplicate/alias checks against data/schema.json
   sync_dataset.py                Regenerates data/catalogue_merged.csv + src/data/catalogue.json from catalogue.jsonl
   merge_batches.py                Merges parallel research batches from data/raw/incoming/ into catalogue.jsonl (id-collision + duplicate checking)
-  fetch_contributors.py           Refreshes src/data/contributors.json: merged pull requests per organization and month in each open-source tool's GitHub organizations (names/links in data/contributor_orgs.json)
-  export_known_institutions.py    Exports research/known_institutions.csv -- give this to research agents as context to avoid re-finding/duplicating known orgs
+  fetch_contributors.py           Refreshes src/data/contributors.json: merged pull requests, commits, reviews and issues per organization and month in each open-source tool's GitHub organizations (names/links in data/contributor_orgs.json)
+  export_known_institutions.py    Writes research/known_institutions.csv (not committed) -- give this to research agents as context to avoid re-finding/duplicating known orgs
 
 src/                              The React + TypeScript app (Vite + Tailwind v4)
   data/catalogue.json             What the app imports — generated, never hand-edit
@@ -64,13 +63,13 @@ src/                              The React + TypeScript app (Vite + Tailwind v4
   lib/                            Pure helpers: router.tsx (pages, overview sections, old-URL redirects, Link), filters.ts (filtering/aggregation),
                                   insights.ts (purpose matrix, per-year counts, organization directory, service providers, tool stats),
                                   chartFilters.tsx + filterParams.ts (each chart's own filters, kept in the URL as ?<chart>.<key>=),
-                                  impact.ts, colors.ts (palette + choropleth buckets), csv.ts, countryAliases.ts
+                                  urlState.ts (other view settings in the URL), impact.ts, colors.ts (palette + choropleth buckets), csv.ts, countryAliases.ts
   pages/                          One file per page: Overview (the one-pager), Tool (/tools/<slug>), Organizations, Projects, and the About pages (Methodology, Changelog, Contact, Legal)
   sections/                       The Overview's charts: PurposeMatrix, Momentum, Geographic, GridDecisions, Builders; Providers (list used on tool pages)
   components/
     layout/Shell.tsx              Top nav with Tools and About dropdowns (menu on phones), the overview's left section index, footer
-    chart/                        ChartCard (title + per-chart Filters button, popover on desktop / bottom sheet on phones + copy link), Segmented
-    common/, charts/, table/      AdoptionRanking, LicenseBadge, EmptyState, GitHubIcon; HorizontalBarChart, WorldMap, MapLegend; DataTable
+    chart/                        ChartCard (title; copy link, download image, download data and Filters top right), MultiSelect, Segmented, StepSlider, YearSlider
+    common/, charts/, table/      AdoptionRanking, LicenseBadge, EmptyState, GitHubIcon, ToolLogo; HorizontalBarChart, WorldMap, MapLegend, YearBars, CoverageBar; DataTable
 CHANGELOG_MAINTENANCE.md          Convention for src/data/changelog.json — read before any dataset change
 CONTRIBUTING.md                   Human-facing contribution guide
 DEPLOYMENT.md                     How to publish a build (GitHub Pages / Vercel / Netlify / any static host)
@@ -91,7 +90,7 @@ npm run export-known-institutions  # regenerate research/known_institutions.csv 
 ```
 Node version is pinned in `.nvmrc`. CI (`.github/workflows/ci.yml`) runs
 validate-data → sync-data (failing if that produces an uncommitted diff) →
-test → build → lint on every push/PR — all four must pass.
+test → build → lint on every push/PR — all must pass.
 
 ## Workflow: contributing a dataset change
 
@@ -126,8 +125,9 @@ codebase, follow them rather than introducing a new pattern:
 - Shared chart/UI colors live in `src/lib/colors.ts` — don't hardcode a new
   hex value in a component; add it there if a genuinely new one is needed.
 - A new page: add it to `PAGES` in `lib/router.tsx`, a file under `src/pages/`, a line in `App.tsx`, and its path
-  to `PAGE_NAMES` in `vite.config.ts` (each page is emitted as its own `index.html`). A new overview chart: wrap it in
-  `ChartCard` with its own id, add the id to `CHART_IDS` (and to `SECTIONS` if it gets an entry in the left index).
+  to `PAGE_NAMES` in `vite.config.ts` (each page is emitted as its own `index.html`). A new chart: wrap it in
+  `ChartCard` with its own id and a `data` function for its CSV download, keep its settings in the URL with
+  `useUrlState`, and add it to `SECTIONS` in `lib/router.tsx` if it gets an entry in the overview's left index.
 - `npm run build` must show 0 TypeScript errors before any commit.
 - After a UI change, actually look at it (a headless browser + a real
   screenshot/DOM query, not just "the code looks right") before calling it
@@ -167,7 +167,7 @@ The UI design (OET brand restyle, Artificial-Analysis-style landing page,
 the GridLens lens-over-aperture logo, the choropleth map fixes) and the
 dataset's research methodology both have a lot of accumulated reasoning
 behind specific decisions. If something looks like it could obviously be
-done a simpler way, check `research/history/` and the git log before
+done a simpler way, check the git log before
 assuming it's an oversight — several past fixes (the sqrt color scale, the
 graticule-inside-ZoomableGroup fix, the changelog's data-only scope) were
 deliberate corrections of a less-obvious bug.

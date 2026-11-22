@@ -9,8 +9,10 @@ deploy it; pick whichever of these fits:
 
 This is how gridlens.org is actually deployed, not a generic template:
 
-1. `.github/workflows/deploy.yml` builds and deploys `dist/` to GitHub Pages
-   on every push to `main` (already in this repo — nothing to add).
+1. `.github/workflows/deploy.yml` builds `dist/` (job `build`) and deploys it
+   to GitHub Pages (job `deploy`) on every push to `main`, or by hand via
+   "Run workflow". If only the deploy fails, "Re-run failed jobs" reuses
+   the build.
 2. `public/CNAME` contains `gridlens.org` (already in this repo) — Vite
    copies anything in `public/` into `dist/` unchanged, so GitHub Pages
    picks up the custom domain automatically from the deployed artifact.

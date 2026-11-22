@@ -18,7 +18,7 @@ Fully client-side: no backend, no database, no paid APIs, no API keys —
 everything runs in the browser against a static dataset.
 
 This repo is the **canonical public home** for both the app and the
-dataset behind it, replacing the earlier `esm-usage-catalog` prototype.
+dataset behind it.
 
 ## Why this repo is designed the way it is
 
@@ -107,11 +107,8 @@ data/
 research/
   AGENTS.md                       entry point for research agents
   RESEARCH_PLAYBOOK.md            proven search techniques + taxonomy discipline + parallel-agent workflow
-  MULTI_TOOL_SEARCH_PROMPT.md     prompt for searching several tools at once (+ multi_tool_search_checklist.csv)
-  prompts/                        prompts for the multi-tool search batches
   world_country_checklist.csv     per-country coverage tracker
-  known_institutions.csv          generated context export for research agents (npm run export-known-institutions)
-  history/                        point-in-time reports from the original research build
+  known_institutions.csv          generated on demand for research agents (npm run export-known-institutions), not committed
 
 scripts/
   validate_dataset.py              schema/enum/duplicate/alias checks

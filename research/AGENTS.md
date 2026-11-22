@@ -1,8 +1,7 @@
 # AGENTS.md — research/
 
 Before searching for new organizations, read `research/RESEARCH_PLAYBOOK.md`
-in full — it has the actual search techniques that found 419 organizations
-in this dataset's original research pass. This file is just the auto-loaded
+in full — it has the search techniques that built this dataset. This file is just the auto-loaded
 summary.
 
 ## The loop (short version)
@@ -31,12 +30,6 @@ checking before anything touches `catalogue.jsonl`.
 
 ## Don't delete a rejected lead
 
-A `status=rejected` row stays in the CSV (not deleted) so a future wave
+A `status=rejected` row stays in `catalogue.jsonl` (not deleted) so a future wave
 doesn't repeat the same dead-end search. See `RESEARCH_PLAYBOOK.md`'s
 "stale negatives" section for when it's actually worth re-checking one.
-
-## `history/`
-
-Point-in-time reports from the original research build. Historical
-reference only — not maintained going forward, don't treat figures in
-there as current without cross-checking the live dataset.

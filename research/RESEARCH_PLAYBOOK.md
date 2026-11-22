@@ -1,8 +1,8 @@
 # Research playbook
 
 How to find, verify, and add new organizations to the dataset — distilled
-from ~25 research waves (Nov 2026) that grew the PLEXOS-specific dataset
-from 0 to 419 confirmed organizations across 149 countries. Written for an
+from the research waves that built the dataset, first for PLEXOS, then
+country-by-country searches and deep dives for every tracked tool. Written for an
 LLM agent (or a human) picking this up cold, with no other context.
 
 ## The loop
@@ -29,7 +29,7 @@ LLM agent (or a human) picking this up cold, with no other context.
    — every add/remove/reclassify gets a dated entry there, in the same
    session as the data change.
 8. `npm run build` to confirm nothing broke, then commit everything
-   together (raw CSV diff + regenerated merged CSV/JSON + changelog entry).
+   together (`catalogue.jsonl` diff + regenerated merged CSV/JSON + changelog entry).
 
 ## Search techniques that have actually worked
 

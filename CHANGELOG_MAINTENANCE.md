@@ -1,11 +1,10 @@
 # Changelog maintenance
 
-GridLens's landing page and `/changelog` page show a feed of **dataset
+GridLens's landing page and `/about/changelog` page show a feed of **dataset
 content changes only** — new organizations, removed organizations, role
 reclassifications, and country-coverage expansions. It deliberately does
 **not** show app/UI changes (new features, redesigns, bug fixes, icon
-changes, etc.) — see the 7 Nov 2026 rework commit for why: it was modeled
-directly on artificialanalysis.ai's own `/changelog`, which is 100% new
+changes, etc.): it is modeled directly on artificialanalysis.ai's own `/changelog`, which is 100% new
 models/evaluations/methodology updates, zero entries about their own site's
 UI.
 
@@ -39,11 +38,11 @@ Each entry in `src/data/changelog.json`:
 }
 ```
 - `tag` is one of: `added` (new org), `removed`, `reclassified`, `coverage`
-  (country-list changes). Add a new tag + icon/style in
-  `src/components/common/Changelog.tsx`'s `TAG_STYLES` map if a genuinely
+  (country-list changes). Add a new tag + its style in
+  `src/pages/Changelog.tsx`'s `TAGS` map if a genuinely
   new category is needed — don't force an awkward fit into the existing 4.
 - `date` uses real, known dates (`D Mon YYYY`) pulled from the actual
-  change record (e.g. the catalogue repo's `progress.md`, a commit date).
+  change record (e.g. the commit or pull request that changed the data).
   Never invent a specific day you don't actually know — fall back to a
   month or range (`"Oct–Nov 2026"`) instead of fabricating false precision.
 - `title` should name the actual organization/entity, not a vague summary
@@ -54,10 +53,6 @@ Each entry in `src/data/changelog.json`:
 
 ## Where the source of truth lives
 
-The GridLens web app (`plexos-catalogue-web`) is a display layer over data
-that's actually researched/maintained in the separate
-`plexos-organization-catalogue` repo (`progress.md`, `candidate_organizations.csv`).
-When that repo's catalogue is updated and re-merged into GridLens's
-`src/data/catalogue.json`, that's the trigger to also update
-`src/data/changelog.json` — read the relevant `progress.md` wave entries for
-exact org names, dates, and reasoning rather than summarizing from memory.
+`data/raw/catalogue.jsonl` in this repo is the dataset; there is no other
+copy. Write the changelog entry from the rows you add, remove or change in
+that file (organization names, countries, dates), not from memory.
