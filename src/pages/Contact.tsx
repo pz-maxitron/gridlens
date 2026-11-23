@@ -14,7 +14,7 @@ export default function Contact() {
   return (
     <div>
       <AboutTabs current="/about/contact" />
-      <h1 className="font-display mt-10 text-5xl text-ink-50">Contact</h1>
+      <h1 className="font-display mt-10 text-5xl text-ink-50">Contact us</h1>
       <p className="mt-4 max-w-2xl text-lg text-ink-300">GridLens gets better with every correction and every project you point us to.</p>
       <div className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-ink-800/80 bg-ink-800/80 md:grid-cols-3">
         {WAYS.map((w) => (
